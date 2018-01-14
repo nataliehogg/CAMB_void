@@ -41,6 +41,8 @@
 
     w_lam = Ini_Read_Double_File(Ini,'w', -1.d0)
     cs2_lam = Ini_Read_Double_File(Ini,'cs2_lam',1.d0)
+    !VOID: we can add here our extra parameter(s)
+
 
     end subroutine DarkEnergy_ReadParams
 
@@ -78,10 +80,14 @@
     real(dl) rhonu,grhoa2, a2
     integer nu_i
 
+    !VOID: here we must change the evolution with a of DE (grhov)
+    !and DM grhoc using Eqs.(20-21) of the old draft
     a2=a**2
 
     !  8*pi*G*rho*a**4.
     grhoa2=grhok*a2+(grhoc+grhob)*a+grhog+grhornomass
+
+    
     if (w_lam == -1._dl) then
         grhoa2=grhoa2+grhov*a2**2
     else
@@ -523,6 +529,8 @@
     maxeq = maxeq +  (EV%lmaxg+1)+(EV%lmaxnr+1)+EV%lmaxgpol-1
 
     !Dark energy
+    !VOID: here is the inclusion of DE in the index system.
+    !In principle we don't need to change this, but in case it is needed, here it is
     if (w_lam /= -1 .and. w_Perturb) then
         EV%w_ix = neq+1
         neq=neq+2
@@ -583,6 +591,8 @@
 
     yout=0
     yout(1:basic_num_eqns) = y(1:basic_num_eqns)
+    !VOID: if we eventually change the indexing, also this part
+    !will need to be changed
     if (w_lam /= -1 .and. w_Perturb) then
         yout(EVout%w_ix)=y(EV%w_ix)
         yout(EVout%w_ix+1)=y(EV%w_ix+1)
@@ -1228,12 +1238,12 @@
     !  Compute expansion rate from: grho 8*pi*rho*a**2
 
     grhob_t=grhob/a
-    grhoc_t=grhoc/a !VOID: change a dependence with Eqs. (7-8), (20-21)
+    grhoc_t=grhoc/a !VOID: change dependence from scale factor with Eqs. (7-8), (20-21)
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
-    grhov_t=grhov*a**(-1-3*w_lam) !VOID: change a dependence with Eqs. (7-8), (20-21)
+    grhov_t=grhov*a**(-1-3*w_lam) !VOID: change dependence from scale factor with Eqs. (7-8), (20-21)
     grho=grhob_t+grhoc_t+grhor_t+grhog_t+grhov_t
-    gpres=(grhog_t+grhor_t)/3+grhov_t*w_lam !VOID: change a dependence with Eqs. (7-8), (20-21)
+    gpres=(grhog_t+grhor_t)/3+grhov_t*w_lam !VOID: change dependence from scale factor with Eqs. (7-8), (20-21)
 
     !  8*pi*a*a*SUM[rho_i*clx_i] add radiation later
     dgrho=grhob_t*clxb+grhoc_t*clxc
@@ -1249,7 +1259,9 @@
         call MassiveNuVarsOut(EV,y,yprime,a,grho,gpres,dgrho,dgq,dgpi, dgpi_diff,pidot_sum)
     end if
 
-    if (w_lam /= -1 .and. w_Perturb) then  !VOID: check changes to be done here
+    if (w_lam /= -1 .and. w_Perturb) then  
+    !VOID: these are the equations for the evolution of DE perturbations.
+    !These need to be changed with Eqs.(14,16)
         clxq=y(EV%w_ix)
         vq=y(EV%w_ix+1)
         dgrho=dgrho + clxq*grhov_t
@@ -1626,6 +1638,9 @@
 
     initv=0
 
+    !VOID: here initial conditions for all differential equations are set.
+    !Do we need to change this? (to be checked)
+
     !  Set adiabatic initial conditions
 
     chi=1  !Get transfer function for chi
@@ -1967,10 +1982,10 @@
     !  Compute expansion rate from: grho 8*pi*rho*a**2
 
     grhob_t=grhob/a
-    grhoc_t=grhoc/a !VOID: change a dependence with Eqs. (7-8), (20-21)
+    grhoc_t=grhoc/a !VOID: change dependence from scale factor with Eqs. (7-8), (20-21)
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
-    if (w_lam==-1._dl) then !VOID: change a dependence with Eqs. (7-8), (20-21)
+    if (w_lam==-1._dl) then !VOID: change dependence from scale factor with Eqs. (7-8), (20-21)
         grhov_t=grhov*a2
     else
         grhov_t=grhov*a**(-1-3*w_lam)
@@ -2008,7 +2023,9 @@
 
     dgrho = dgrho_matter
 
-    if (w_lam /= -1 .and. w_Perturb) then !VOID: check changes to do here
+    if (w_lam /= -1 .and. w_Perturb) then 
+    !VOID: here differential equations for DE perturbations again
+    !change with Eqs.(14,16)
         clxq=ay(EV%w_ix)
         vq=ay(EV%w_ix+1)
         dgrho=dgrho + clxq*grhov_t
@@ -2073,7 +2090,7 @@
         ayprime(2)=0.5_dl*dgq + CP%curv*z
     end if
 
-    if (w_lam /= -1 .and. w_Perturb) then !VOID: change for new DE clustering
+    if (w_lam /= -1 .and. w_Perturb) then !VOID: change for new DE clustering Eqs.(14,16)
         ayprime(EV%w_ix)= -3*adotoa*(cs2_lam-w_lam)*(clxq+3*adotoa*(1+w_lam)*vq/k) &
             -(1+w_lam)*k*vq -(1+w_lam)*k*z
 
@@ -2102,7 +2119,9 @@
         EV%OutputTransfer(Transfer_vel_baryon_cdm) = vb
     end if
 
-    !  CDM equation of motion !VOID: change for new DM clustering
+    !  CDM equation of motion 
+    !VOID: Equatuions for DM here. change for new DM clustering
+    !use Eqs.(13,15)
     clxcdot=-k*z
     ayprime(3)=clxcdot
 
@@ -2523,10 +2542,10 @@
     ! Compute expansion rate from: grho=8*pi*rho*a**2
     ! Also calculate gpres: 8*pi*p*a**2
     grhob_t=grhob/a
-    grhoc_t=grhoc/a !VOID: change a dependence with Eqs. (7-8), (20-21)
+    grhoc_t=grhoc/a !VOID: change dependence from scale factor with Eqs. (7-8), (20-21)
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
-    if (w_lam==-1._dl) then!VOID: change a dependence with Eqs. (7-8), (20-21)
+    if (w_lam==-1._dl) then!VOID: change dependence from scale factor with Eqs. (7-8), (20-21)
         grhov_t=grhov*a2
     else
         grhov_t=grhov*a**(-1-3*w_lam)
