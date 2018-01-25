@@ -120,6 +120,9 @@
         real(dl)  :: Nu_mass_fractions(max_nu) !The ratios of the total densities
         integer   :: Nu_mass_numbers(max_nu) !physical number per eigenstate
 
+        !MMmod: added coupling parameter as standard CAMB param
+        real(dl)  :: qV
+
         integer   :: Scalar_initial_condition
         !must be one of the initial_xxx values defined in GaugeInterface
 

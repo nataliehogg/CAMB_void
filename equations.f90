@@ -28,7 +28,7 @@
 
     real(dl), parameter :: wa_ppf = 0._dl !Not used here, just for compatibility with e.g. halofit
 
-    real(dl) :: q = 0_dl ! interaction term
+!    real(dl) :: q = 0_dl ! interaction term
 
     logical :: w_perturb = .true.
     !If you are tempted to set this = .false. read
@@ -47,7 +47,8 @@
     
     ! I addded the interaction term q as a new parameter
 
-    q = Ini_Read_Double_File(Ini, 'q', 0.d0)
+   ! q = Ini_Read_Double_File(Ini, 'q', 0.d0)
+   ! write(0,*) 'qread=',q
 
 
     end subroutine DarkEnergy_ReadParams
@@ -94,9 +95,10 @@
     grhoa2=grhok*a2+grhob*a+grhog+grhornomass    ! I removed grhoc from this sum as we need to add the effect of q within the if statement
 
     if (w_lam == -1._dl) then ! we set w != -1 in params.ini to avoid this track
-        grhoa2=grhoa2+grhov*a2**2
+        grhoa2=grhoa2+grhov*a2**2+grhoc*a
     else
-        grhoa2 = grhoa2 + grhov*a**(-q) + grhoc*a**(-3) + grhov*(q/(-3 + q))*(a**(-3) - a**(-q)) ! I added grhov and grhoc with the interaction here
+        grhoa2 = grhoa2 + grhov*a**(-CP%qV+4._dl) + (grhoc*a**CP%qV*(CP%qV-3)+CP%qV*grhov*(a**CP%qV-a**3.))*a**(-CP%qV+1._dl)/(CP%qV-3) !MMmod
+!        grhoc*a**(-3) + grhov*(q/(-3 + q))*(a**(-3) - a**(-q)))*a2 ! I added grhov and grhoc with the interaction here
     end if
 
     if (CP%Num_Nu_massive /= 0) then
@@ -1244,12 +1246,13 @@
     !  Compute expansion rate from: grho 8*pi*rho*a**2
 
     grhob_t=grhob/a
-    grhoc_t=grhoc*a**(-3) + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqn (23) DONE
+!    grhoc_t=grhoc*a**(-3) + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqn (23) DONE
+    grhoc_t=(grhoc*a**CP%qV*(CP%qV-3)+grhov*(CP%qV*a**CP%qV-CP%qV*a**3._dl))*a**(-CP%qV-1._dl)/(CP%qV-3)!MMmod
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
-    grhov_t=grhov*a**(-q) !VOID: change dependence from scale factor with Eqn (22) DONE
+    grhov_t=grhov*a**(-CP%qV+2) !VOID: change dependence from scale factor with Eqn (22) DONE
     grho=grhob_t+grhoc_t+grhor_t+grhog_t+grhov_t
-    gpres=(grhog_t+grhor_t)/3+grhov_t*(-q) !VOID: change dependence from scale factor with Eqs. (22, 23) DONE (changed w_lam for -q) 
+    gpres=(grhog_t+grhor_t)/3+grhov_t*(-CP%qV) !VOID: change dependence from scale factor with Eqs. (22, 23) DONE (changed w_lam for -q) 
 
     !  8*pi*a*a*SUM[rho_i*clx_i] add radiation later
     dgrho=grhob_t*clxb+grhoc_t*clxc
@@ -1988,13 +1991,14 @@
     !  Compute expansion rate from: grho 8*pi*rho*a**2
 
     grhob_t=grhob/a
-    grhoc_t=grhoc/a + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqs. (22, 23) DONE
+    !grhoc_t=grhoc/a + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqs. (22, 23) DONE
+    grhoc_t=(grhoc*a**CP%qV*(CP%qV-3)+grhov*(CP%qV*a**CP%qV-CP%qV*a**3._dl))*a**(-CP%qV-1._dl)/(CP%qV-3)!MMmod
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
     if (w_lam==-1._dl) then !VOID: change dependence from scale factor with Eqs. (22, 23) DONE
         grhov_t=grhov*a2
     else
-        grhov_t = grhov*a**(-q) 
+        grhov_t = grhov*a**(-CP%qV+2) 
     end if
 
 
@@ -2549,13 +2553,14 @@
     ! Compute expansion rate from: grho=8*pi*rho*a**2
     ! Also calculate gpres: 8*pi*p*a**2
     grhob_t=grhob/a
-    grhoc_t=grhoc/a + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqs. (22, 23) DONE
+!    grhoc_t=grhoc/a + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqs. (22, 23) DONE
+    grhoc_t=(grhoc*a**CP%qV*(CP%qV-3)+grhov*(CP%qV*a**CP%qV-CP%qV*a**3._dl))*a**(-CP%qV-1._dl)/(CP%qV-3)!MMmod
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
     if (w_lam==-1._dl) then!VOID: change dependence from scale factor with Eqs. (22, 23) DONE
         grhov_t=grhov*a2
     else
-        grhov_t = grhov*a**(-q) 
+        grhov_t = grhov*a**(-CP%qV+2) 
     end if
 
     grho=grhob_t+grhoc_t+grhor_t+grhog_t+grhov_t
