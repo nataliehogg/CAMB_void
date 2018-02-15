@@ -43,7 +43,7 @@
 
     w_lam = Ini_Read_Double_File(Ini,'w', -1.d0)
     cs2_lam = Ini_Read_Double_File(Ini,'cs2_lam',1.d0)
-    !VOID: we can add here our extra parameter(s) DONE
+    !VOID: we can add here our extra parameter(s) 
     
     ! I addded the interaction term q as a new parameter
 
@@ -88,7 +88,7 @@
     integer nu_i
 
     !VOID: here we must change the evolution with a of DE (grhov) 
-    !and DM grhoc using Eqs. (22, 23) of the old draft DONE
+    !and DM grhoc using Eqs. (22, 23) of the old draft 
     a2=a**2
 
     !  8*pi*G*rho*a**4
@@ -97,7 +97,8 @@
     if (w_lam == -1._dl) then ! we set w != -1 in params.ini to avoid this track
         grhoa2=grhoa2+grhov*a2**2+grhoc*a
     else
-        grhoa2 = grhoa2 + grhov*a**(-CP%qV+4._dl) + (grhoc*a**CP%qV*(CP%qV-3)+CP%qV*grhov*(a**CP%qV-a**3.))*a**(-CP%qV+1._dl)/(CP%qV-3) !MMmod
+        grhoa2 = grhoa2 + grhov*a**(-CP%qV+4._dl) + (grhoc*a**CP%qV*(CP%qV-3)+ & 
+        & CP%qV*grhov*(a**CP%qV-a**3.))*a**(-CP%qV+1._dl)/(CP%qV-3) !MMmod
 !        grhoc*a**(-3) + grhov*(q/(-3 + q))*(a**(-3) - a**(-q)))*a2 ! I added grhov and grhoc with the interaction here
     end if
 
@@ -1246,13 +1247,13 @@
     !  Compute expansion rate from: grho 8*pi*rho*a**2
 
     grhob_t=grhob/a
-!    grhoc_t=grhoc*a**(-3) + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqn (23) DONE
+!    grhoc_t=grhoc*a**(-3) + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqn (23) 
     grhoc_t=(grhoc*a**CP%qV*(CP%qV-3)+grhov*(CP%qV*a**CP%qV-CP%qV*a**3._dl))*a**(-CP%qV-1._dl)/(CP%qV-3)!MMmod
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
-    grhov_t=grhov*a**(-CP%qV+2) !VOID: change dependence from scale factor with Eqn (22) DONE
+    grhov_t=grhov*a**(-CP%qV+2) !VOID: change dependence from scale factor with Eqn (22) 
     grho=grhob_t+grhoc_t+grhor_t+grhog_t+grhov_t
-    gpres=(grhog_t+grhor_t)/3+grhov_t*(-CP%qV) !VOID: change dependence from scale factor with Eqs. (22, 23) DONE (changed w_lam for -q) 
+    gpres=(grhog_t+grhor_t)/3+grhov_t*(-CP%qV) !VOID: change dependence from scale factor with Eqs. (22, 23) (changed w_lam for -q) 
 
     !  8*pi*a*a*SUM[rho_i*clx_i] add radiation later
     dgrho=grhob_t*clxb+grhoc_t*clxc
@@ -1991,11 +1992,11 @@
     !  Compute expansion rate from: grho 8*pi*rho*a**2
 
     grhob_t=grhob/a
-    !grhoc_t=grhoc/a + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqs. (22, 23) DONE
+    !grhoc_t=grhoc/a + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqs. (22, 23) 
     grhoc_t=(grhoc*a**CP%qV*(CP%qV-3)+grhov*(CP%qV*a**CP%qV-CP%qV*a**3._dl))*a**(-CP%qV-1._dl)/(CP%qV-3)!MMmod
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
-    if (w_lam==-1._dl) then !VOID: change dependence from scale factor with Eqs. (22, 23) DONE
+    if (w_lam==-1._dl) then !VOID: change dependence from scale factor with Eqs. (22, 23) 
         grhov_t=grhov*a2
     else
         grhov_t = grhov*a**(-CP%qV+2) 
@@ -2035,8 +2036,8 @@
     dgrho = dgrho_matter
 
     if (w_lam /= -1 .and. w_Perturb) then 
-    !VOID: here differential equations for DE perturbations again
-    !change with Eqs.(14,16)
+    !VOID: here differential equations for DE perturbations again 
+    !change with Eqs.(14,16) 
         clxq=ay(EV%w_ix)
         vq=ay(EV%w_ix+1)
         dgrho=dgrho + clxq*grhov_t
@@ -2101,7 +2102,7 @@
         ayprime(2)=0.5_dl*dgq + CP%curv*z
     end if
 
-    if (w_lam /= -1 .and. w_Perturb) then !VOID: change for new DE clustering Eqs.(14,16)
+    if (w_lam /= -1 .and. w_Perturb) then !VOID: change for new DE clustering Eqs.(14,16) 
         ayprime(EV%w_ix)= -3*adotoa*(cs2_lam-w_lam)*(clxq+3*adotoa*(1+w_lam)*vq/k) &
             -(1+w_lam)*k*vq -(1+w_lam)*k*z
 
@@ -2133,7 +2134,7 @@
     !  CDM equation of motion 
     !VOID: Equations for DM here. change for new DM clustering
     !use Eqs.(13,15)
-    clxcdot=-k*z
+    clxcdot=-k*z + 8*pi*a**3*CP%qV*clxc / grhoc_t !NHmod
     ayprime(3)=clxcdot
 
     !  Baryon equation of motion.
@@ -2553,14 +2554,14 @@
     ! Compute expansion rate from: grho=8*pi*rho*a**2
     ! Also calculate gpres: 8*pi*p*a**2
     grhob_t=grhob/a
-!    grhoc_t=grhoc/a + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqs. (22, 23) DONE
+!    grhoc_t=grhoc/a + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqs. (22, 23) 
     grhoc_t=(grhoc*a**CP%qV*(CP%qV-3)+grhov*(CP%qV*a**CP%qV-CP%qV*a**3._dl))*a**(-CP%qV-1._dl)/(CP%qV-3)!MMmod
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
-    if (w_lam==-1._dl) then!VOID: change dependence from scale factor with Eqs. (22, 23) DONE
-        grhov_t=grhov*a2
-    else
+    if (w_lam==-1._dl) then!VOID: change dependence from scale factor with Eqs. (22, 23) 
         grhov_t = grhov*a**(-CP%qV+2) 
+    else
+        grhov_t=grhov*a**(-1-3*w_lam) 
     end if
 
     grho=grhob_t+grhoc_t+grhor_t+grhog_t+grhov_t
