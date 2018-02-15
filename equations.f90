@@ -2134,7 +2134,7 @@
     !  CDM equation of motion 
     !VOID: Equations for DM here. change for new DM clustering
     !use Eqs.(13,15)
-    clxcdot=-k*z + 8*pi*a**3*CP%qV*clxc / grhoc_t !NHmod
+    clxcdot=-k*z + a**3.*CP%qV*clxc / grhoc_t !NHmod
     ayprime(3)=clxcdot
 
     !  Baryon equation of motion.
