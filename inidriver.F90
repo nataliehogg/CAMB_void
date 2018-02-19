@@ -117,8 +117,14 @@
     end if
 
     !MMmod: reading parameter here
-    P%qV     = Ini_Read_Double('void_coupling',0._dl)
-    write(0,*) 'reading qV',P%qV
+    P%qV_01     = Ini_Read_Double('void_coupling_01',0._dl)
+    P%qV_12     = Ini_Read_Double('void_coupling_12',0._dl)
+    P%qV_23     = Ini_Read_Double('void_coupling_23',0._dl)
+    P%qV_34     = Ini_Read_Double('void_coupling_34',0._dl)
+    write(0,*) 'reading qV_01',P%qV_01
+    write(0,*) 'reading qV_12',P%qV_12
+    write(0,*) 'reading qV_23',P%qV_23
+    write(0,*) 'reading qV_34',P%qV_34
 
     P%tcmb   = Ini_Read_Double('temp_cmb',COBE_CMBTemp)
     P%yhe    = Ini_Read_Double('helium_fraction',0.24_dl)

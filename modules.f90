@@ -121,7 +121,7 @@
         integer   :: Nu_mass_numbers(max_nu) !physical number per eigenstate
 
         !MMmod: added coupling parameter as standard CAMB param
-        real(dl)  :: qV
+        real(dl)  :: qV_01, qV_12, qV_23, qV_34
 
         integer   :: Scalar_initial_condition
         !must be one of the initial_xxx values defined in GaugeInterface
@@ -2343,12 +2343,17 @@
     !JD 08/13 Changes in here to PK arrays and variables
     integer j_PK
 
+! SP:
+call Transfer_Get_sigma8(MTrans)
+write(22,*) MTrans%sigma_8
+
     do in=1, CP%InitPower%nn
         if (CP%InitPower%nn>1)  write(*,*) 'Power spectrum : ', in
         do j_PK=1, CP%Transfer%PK_num_redshifts
             j = CP%Transfer%PK_redshifts_index(j_PK)
             write(*,'("at z =",f7.3," sigma8 (all matter) = ",f7.4)') &
                 CP%Transfer%redshifts(j), MTrans%sigma_8(j_PK,in)
+
         end do
         if (get_growth_sigma8) then
             do j_PK=1, CP%Transfer%PK_num_redshifts
@@ -3208,3 +3213,36 @@
     end subroutine GetBackgroundEvolution
 
     end module ThermoData
+
+    module VOID_utilities
+      use precision
+      use ModelParams
+
+    contains
+
+      function void_qV(a)
+        use precision
+        use ModelParams
+        implicit none
+        real(dl), intent(in) :: a
+        real(dl) :: z
+        real(dl):: void_qV
+
+        z = 1._dl/(a) -1._dl
+
+        if (z > 0._dl .and. z<=0.3_dl)  then
+          void_qV =CP%qV_34
+        else if(z > 0.3_dl .and. z<=0.9_dl ) then
+          void_qV = CP%qV_23
+        else if(z > 0.9_dl .and. z<=2.5_dl ) then
+          void_qV = CP%qV_12
+        else if(z > 2.5_dl ) then
+            void_qV = CP%qV_01
+        end if
+
+        return
+
+      end function void_qV
+
+
+    end module VOID_utilities

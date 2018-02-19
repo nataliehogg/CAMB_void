@@ -81,8 +81,10 @@
     use ModelParams
     use MassiveNu
     use LambdaGeneral
+    use VOID_utilities
     implicit none
     real(dl) dtauda
+    ! real(dl)::void_qV
     real(dl), intent(IN) :: a
     real(dl) rhonu,grhoa2, a2
     integer nu_i
@@ -97,8 +99,10 @@
     if (w_lam == -1._dl) then ! we set w != -1 in params.ini to avoid this track
         grhoa2=grhoa2+grhov*a2**2+grhoc*a
     else
-      grhoa2 = grhoa2 + grhov*a**(-CP%qV+4._dl) + (grhoc*a*(CP%qV-3)+ &
-      & CP%qV*grhov*(a-a**(-CP%qV+4.)))/(CP%qV-3) !SPmod
+      ! grhoa2 = grhoa2 + grhov*a**(-CP%qV+4._dl) + (grhoc*a*(CP%qV-3)+ &
+      ! & CP%qV*grhov*(a-a**(-CP%qV+4.)))/(CP%qV-3) !SPmod
+      grhoa2 = grhoa2 + grhov*a**(-void_qV(a)+4._dl) + (grhoc*a*(void_qV(a)-3)+ &
+      & void_qV(a)*grhov*(a-a**(-void_qV(a)+4.)))/(void_qV(a)-3) !SPmod
 !        grhoc*a**(-3) + grhov*(q/(-3 + q))*(a**(-3) - a**(-q)))*a2 ! I added grhov and grhoc with the interaction here
     end if
 
@@ -1200,6 +1204,7 @@
     use ThermoData
     use lvalues
     use ModelData
+    use VOID_utilities
     implicit none
     integer j
     type(EvolutionVars) EV
@@ -1219,6 +1224,8 @@
     real(dl) clxq, vq, diff_rhopi, octg, octgprime
     real(dl) sources(CTransScal%NumSources)
     real(dl) ISW
+    real(dl) redshift, a_1, a_2, a_3
+
 
     yprime = 0
     call derivs(EV,EV%ScalEqsToPropagate,tau,y,yprime)
@@ -1244,16 +1251,36 @@
     vb  =y(5)
     vbdot =yprime(5)
 
+    ! VOID: define usefull quantities
+    redshift = 1._dl/a -1._dl
+
+    a_1 = 1._dl / (2.5_dl + 1._dl)
+
+    a_2 = 1._dl / (0.9_dl + 1._dl)
+
+    a_3 = 1._dl / (0.3_dl + 1._dl)
+
     !  Compute expansion rate from: grho 8*pi*rho*a**2
 
     grhob_t=grhob/a
 !    grhoc_t=grhoc*a**(-3) + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqn (23)
-    grhoc_t=(grhoc*a**CP%qV*(CP%qV-3)+grhov*(CP%qV*a**CP%qV-CP%qV*a**3._dl))*a**(-CP%qV-1._dl)/(CP%qV-3)!MMmod
+  ! grhoc_t=(grhoc*a**CP%qV*(CP%qV-3)+grhov*(CP%qV*a**CP%qV-CP%qV*a**3._dl))*a**(-CP%qV-1._dl)/(CP%qV-3)!MMmod
+    grhoc_t=(grhoc*a**void_qV(a)*(void_qV(a)-3)+grhov*(void_qV(a)*a**void_qV(a)-void_qV(a)*a**3._dl))*a**(-void_qV(a)-1._dl)/(void_qV(a)-3)!MMmod
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
-    grhov_t=grhov*a**(-CP%qV+2) !VOID: change dependence from scale factor with Eqn (22)
+    ! grhov_t=grhov*a**(-CP%qV+2) !VOID: change dependence from scale factor with Eqn (22)
+    if (redshift>2.5_dl) then
+    grhov_t=grhov*a**(-void_qV(a)+2) !VOID: change dependence from scale factor with Eqn (22)
+  else if (redshift<2.5_dl .and. redshift>=0.9_dl) then
+    grhov_t =grhov*(a/a_1)**(-void_qV(a))*a2
+  else if (redshift<0.9_dl .and. redshift>=0.3_dl) then
+    grhov_t = grhov*(a_2/a_1)**(-CP%qV_12)*(a/a_2)**(-void_qV(a))*a2
+  else
+    grhov_t = grhov*(a_2/a_1)**(-CP%qV_12)*(a_3/a_2)**(-CP%qV_23)*(a/a_3)**(-void_qV(a))*a2
+  end if
     grho=grhob_t+grhoc_t+grhor_t+grhog_t+grhov_t
-    gpres=(grhog_t+grhor_t)/3+grhov_t*(-CP%qV) !VOID: change dependence from scale factor with Eqs. (22, 23) (changed w_lam for -q)
+    ! gpres=(grhog_t+grhor_t)/3+grhov_t*(-CP%qV) !VOID: change dependence from scale factor with Eqs. (22, 23) (changed w_lam for -q)
+    gpres=(grhog_t+grhor_t)/3+grhov_t*(-void_qV(a)) !VOID: change dependence from scale factor with Eqs. (22, 23) (changed w_lam for -q)
 
     !  8*pi*a*a*SUM[rho_i*clx_i] add radiation later
     dgrho=grhob_t*clxb+grhoc_t*clxc
@@ -1948,6 +1975,7 @@
     !  ayprime is not necessarily GaugeInterface.yprime, so keep them distinct
     use ThermoData
     use MassiveNu
+    use VOID_utilities
     implicit none
     type(EvolutionVars) EV
 
@@ -1973,6 +2001,8 @@
     real(dl) dgpi,dgrho_matter,grho_matter, clxnu_all
     !non-flat vars
     real(dl) cothxor !1/tau in flat case
+    ! real(dl)::void_qV
+
 
     k=EV%k_buf
     k2=EV%k2_buf
@@ -1993,13 +2023,15 @@
 
     grhob_t=grhob/a
     !grhoc_t=grhoc/a + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqs. (22, 23)
-    grhoc_t=(grhoc*a**CP%qV*(CP%qV-3)+grhov*(CP%qV*a**CP%qV-CP%qV*a**3._dl))*a**(-CP%qV-1._dl)/(CP%qV-3)!MMmod
+    ! grhoc_t=(grhoc*a**CP%qV*(CP%qV-3)+grhov*(CP%qV*a**CP%qV-CP%qV*a**3._dl))*a**(-CP%qV-1._dl)/(CP%qV-3)!MMmod
+    grhoc_t=(grhoc*a**void_qV(a)*(void_qV(a)-3)+grhov*(void_qV(a)*a**void_qV(a)-void_qV(a)*a**3._dl))*a**(-void_qV(a)-1._dl)/(void_qV(a)-3)!MMmod
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
     if (w_lam==-1._dl) then !VOID: change dependence from scale factor with Eqs. (22, 23)
         grhov_t=grhov*a2
     else
-        grhov_t = grhov*a**(-CP%qV+2)
+      ! grhov_t = grhov*a**(-CP%qV+2)
+      grhov_t = grhov*a**(-void_qV(a)+2)
     end if
 
 
@@ -2135,7 +2167,8 @@
     !VOID: Equations for DM here. change for new DM clustering
     !use Eqs.(13,15)
     ! clxcdot=-k*z + a**3.*CP%qV*clxc / grhoc_t !NHmod
-    clxcdot=-k*z -CP%qV*adotoa*grhov_t/grhoc_t*clxc  !SPmod
+    ! clxcdot=-k*z -CP%qV*adotoa*grhov_t/grhoc_t*clxc  !SPmod
+    clxcdot=-k*z -void_qV(a)*adotoa*grhov_t/grhoc_t*clxc  !SPmod
     ayprime(3)=clxcdot
 
     !  Baryon equation of motion.
@@ -2527,6 +2560,7 @@
     !  Evaluate the time derivatives of the tensor perturbations.
     use ThermoData
     use MassiveNu
+    use VOID_utilities
     implicit none
     type(EvolutionVars) EV
     integer n,l,i,ind, nu_i
@@ -2538,6 +2572,8 @@
     real(dl) Hchi,pinu, pig
     real(dl) k,k2,a,a2
     real(dl) pir, adotoa, rhonu, shear
+    ! real(dl)::void_qV
+
 
     real(dl) cothxor
 
@@ -2556,11 +2592,13 @@
     ! Also calculate gpres: 8*pi*p*a**2
     grhob_t=grhob/a
 !    grhoc_t=grhoc/a + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqs. (22, 23)
-    grhoc_t=(grhoc*a**CP%qV*(CP%qV-3)+grhov*(CP%qV*a**CP%qV-CP%qV*a**3._dl))*a**(-CP%qV-1._dl)/(CP%qV-3)!MMmod
+    ! grhoc_t=(grhoc*a**CP%qV*(CP%qV-3)+grhov*(CP%qV*a**CP%qV-CP%qV*a**3._dl))*a**(-CP%qV-1._dl)/(CP%qV-3)!MMmod
+      grhoc_t=(grhoc*a**void_qV(a)*(void_qV(a)-3)+grhov*(void_qV(a)*a**void_qV(a)-void_qV(a)*a**3._dl))*a**(-void_qV(a)-1._dl)/(void_qV(a)-3)!MMmod
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
     if (w_lam==-1._dl) then!VOID: change dependence from scale factor with Eqs. (22, 23)
-        grhov_t = grhov*a**(-CP%qV+2)
+      ! grhov_t = grhov*a**(-CP%qV+2)
+      grhov_t = grhov*a**(-void_qV(a)+2)
     else
         grhov_t=grhov*a**(-1-3*w_lam)
     end if
@@ -2726,8 +2764,6 @@
     aytprime(2)=-k*shear
 
     end subroutine derivst
-
-
 
     !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
