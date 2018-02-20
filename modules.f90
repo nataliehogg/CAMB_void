@@ -2343,10 +2343,6 @@
     !JD 08/13 Changes in here to PK arrays and variables
     integer j_PK
 
-! SP:
-call Transfer_Get_sigma8(MTrans)
-write(22,*) MTrans%sigma_8
-
     do in=1, CP%InitPower%nn
         if (CP%InitPower%nn>1)  write(*,*) 'Power spectrum : ', in
         do j_PK=1, CP%Transfer%PK_num_redshifts
@@ -3244,5 +3240,55 @@ write(22,*) MTrans%sigma_8
 
       end function void_qV
 
+      subroutine void_compute_background(a, grhov_t,grhoc_t)
+        use precision
+        use ModelParams
+        implicit none
+        real(dl), intent(in) :: a
+        real(dl), intent(out):: grhov_t, grhoc_t
+        real(dl) :: a_1,a_2,a_3,a2
+        real(dl) :: grhoc_3, V_3,grhoc_2, V_2,grhoc_1, V_1
+
+        a_1 = 1._dl / (2.5_dl + 1._dl)
+        a_2 = 1._dl / (0.9_dl + 1._dl)
+        a_3 = 1._dl / (0.3_dl + 1._dl)
+
+        a2=a*a
+
+        grhoc_3 = grhoc*a_3**(-3.)+grhov*CP%qv_34/(CP%qv_34-3._dl)*(a_3**(-3.)- a_3**(-CP%qv_34))
+        V_3 = grhov*a_3**(-CP%qv_34)
+        grhoc_2 = grhoc_3*(a_2/a_3)**(-3.)+V_3*CP%qv_23/(CP%qv_23-3._dl)*((a_2/a_3)**(-3.)- (a_2/a_3)**(-CP%qv_23))
+        V_2 = grhov*a_3**(-CP%qv_34)*(a_2/a_3)**(-CP%qv_23)
+        grhoc_1 = grhoc_2*(a_1/a_2)**(-3.)+V_2*CP%qv_12/(CP%qv_12-3._dl)*((a_1/a_2)**(-3.)- (a_1/a_2)**(-CP%qv_12))
+        V_1 = grhov*a_3**(-CP%qv_34)*(a_2/a_3)**(-CP%qv_23)*(a_1/a_2)**(-CP%qv_12)
+
+        if (a==0._dl) return
+
+        if (a >a_3) then
+
+          grhov_t=grhov*a**(-CP%qV_34+2)
+          grhoc_t = (grhoc*a**(-3.) +grhov*CP%qv_34/(CP%qv_34 -3._dl)*( a**(-3.) -a**(-CP%qv_34) ))*a2
+
+        else if (a<=a_3 .and. a>a_2) then
+
+          grhov_t =grhov*(a_3)**(-CP%qv_34)*(a/a_3)**(-CP%qv_23)*a2
+          grhoc_t = (grhoc_3*(a/a_3)**(-3.) +V_3*CP%qv_23/(CP%qv_23 -3._dl)*( (a/a_3)**(-3.) -(a/a_3)**(-CP%qv_23) ))*a2
+
+        else if (a<=a_2.and. a>a_1) then
+
+          grhov_t =grhov*(a_3)**(-CP%qv_34)*(a_2/a_3)**(-CP%qv_23)*(a/a_2)**(-CP%qv_12)*a2
+          grhoc_t =(grhoc_2*(a/a_2)**(-3.) +V_2*CP%qv_12/(CP%qv_12 -3._dl)*( (a/a_2)**(-3.) -(a/a_2)**(-CP%qv_12) ))*a2
+
+        else if (a<=a_1) then
+
+          grhov_t =grhov*(a_3)**(-CP%qv_34)*(a_2/a_3)**(-CP%qv_23)*(a_1/a_2)**(-CP%qv_12)*(a/a_1)**(-CP%qv_01)*a2
+          grhoc_t =(grhoc_1*(a/a_1)**(-3.) +V_1*CP%qv_01/(CP%qv_01 -3._dl)*( (a/a_1)**(-3.) -(a/a_1)**(-CP%qv_01) ))*a2
+
+        end if
+
+        return
+
+
+      end subroutine void_compute_background
 
     end module VOID_utilities
