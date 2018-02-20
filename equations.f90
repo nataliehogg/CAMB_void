@@ -2161,7 +2161,8 @@
     !use Eqs.(13,15)
     ! clxcdot=-k*z + a**3.*CP%qV*clxc / grhoc_t !NHmod
     ! clxcdot=-k*z -CP%qV*adotoa*grhov_t/grhoc_t*clxc  !SPmod
-    clxcdot=-k*z -void_qV(a)*adotoa*grhov_t/grhoc_t*clxc  !SPmod
+    clxcdot=-k*z -void_qV_fun(a)*adotoa*grhov_t/grhoc_t*clxc  !SPmod
+    ! write(222,*)a, void_qV_fun(a)
     ayprime(3)=clxcdot
 
     !  Baryon equation of motion.
