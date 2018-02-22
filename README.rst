@@ -1,38 +1,49 @@
 ===================
-CAMB
+CosmoMC
 ===================
-:CAMB:  Code for Anisotropies in the Microwave Background, Fortran 95 code and python module
-:Homepage: http://camb.info/
+:CosmoMC:  Fortran 2008 parallelized MCMC sampler (general and cosmology)
+:Homepage: http://cosmologist.info/cosmomc/
 
-.. image:: http://img.shields.io/pypi/v/camb.svg?style=flat
-        :target: https://pypi.python.org/pypi/camb/
-  
 Description and installation
 =============================
 
-For full details of the Fortran code see the `ReadMe <http://camb.info/readme.html>`_.
+For full details see the `ReadMe <http://cosmologist.info/cosmomc/readme.html>`_.
 
-The python wrapper provides a module called "camb", souce in the "pycamb" folder and documented on ReadTheDocs.
+Algorithm details
+==================
 
-.. image:: https://readthedocs.org/projects/camb/badge/?version=latest
-   :target: https://camb.readthedocs.org/en/latest
+See the latest `paper <http://arxiv.org/abs/1304.4473>`_.
 
-The master and devel branches have an integrated test suite, which runs automatically on `Travis <http://travis-ci.org>`_  for new commits and pull requests.
-Reference results and test outputs are stored in the `test outputs repository <https://github.com/cmbant/CAMB_test_outputs/>`_. Tests can also be run locally.
+GetDist
+===================
+
+CosmoMC includes the GetDist python sample analysis and plotting package, which is
+also `available separately <http://getdist.readthedocs.org/en/latest/>`_.
 
 Branches
 =============================
 
 The master branch contains latest changes to the main release version.
 
-.. image:: https://secure.travis-ci.org/cmbant/CAMB.png?branch=master
-  :target: https://secure.travis-ci.org/cmbant/CAMB/builds
+.. image:: https://secure.travis-ci.org/cmbant/CosmoMC.png?branch=master
+  :target: https://secure.travis-ci.org/cmbant/CosmoMC/builds
 
-The devel branch is a development version, which integrates CAMB and CAMB sources, and uses Fortran 2008 (and hence requires ifort 14+ or gfortran 6+).
+The devel branch is a development version, using CAMB devel branch which integrates 
+CAMB and CAMB sources (though CAMB sources functions are not available via CosmoMC yet).
+Includes run-time changing of dark energy model between fluid and PPF modes (easily extended).
+Shared general function now taken from the `forutils <https://github.com/cmbant/forutils>`_ library.
 
-.. image:: https://secure.travis-ci.org/cmbant/CAMB.png?branch=devel
-  :target: https://secure.travis-ci.org/cmbant/CAMB/builds
+.. image:: https://secure.travis-ci.org/cmbant/CosmoMC.png?branch=devel
+  :target: https://secure.travis-ci.org/cmbant/CosmoMC/builds
 
+Both branches now have a travis unit test to check they work with the Planck 2015 data. The test
+does a test install of forutils, CosmoMC and the Planck likelihood code and checks the likelihood is as expected.
+See tests/run_tests.sh for the setup and test code. There are small changes in the absolute likelihood value between branches
+due to small changes in the CAMB version (e.g. implied optical depth changes very slightly due to changes in time sampling).
 
-CAMB_sources is the updated public `CAMB Sources <http://camb.info/sources/>`_ code.
+=============
 
+.. raw:: html
+
+    <a href="http://www.sussex.ac.uk/astronomy/"><img src="https://cdn.cosmologist.info/antony/Sussex.png" height="170px"></a>
+    <a href="http://erc.europa.eu/"><img src="https://erc.europa.eu/sites/default/files/content/erc_banner-vertical.jpg" height="200px"></a>
