@@ -71,7 +71,7 @@
     call Names%AddDerivedRange('H0', this%H0_min, this%H0_max)
     this%num_derived = Names%num_derived
     !set number of hard parameters, number of initial power spectrum parameters
-    call this%SetTheoryParameterNumbers(16,last_power_index)
+    call this%SetTheoryParameterNumbers(20,last_power_index) !NH increased no. of params
 
     end subroutine TP_Init
 
@@ -329,6 +329,11 @@
         CMB%ALens = Params(14)
         CMB%ALensf = Params(15)
         CMB%fdm = Params(16)
+
+        CMB%q0 = Params(17) !NH added 4 bin params
+        CMB%q1 = Params(18)
+        CMB%q2 = Params(19)
+        CMB%q3 = Params(20)
         call SetFast(Params,CMB)
     end if
 

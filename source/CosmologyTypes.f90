@@ -12,7 +12,7 @@
     integer, parameter :: As_index=1, ns_index =2, nrun_index=3, nrunrun_index=4, amp_ratio_index = 5, &
         & nt_index= 6, ntrun_index = 7, Aphiphi_index = 8, last_power_index = Aphiphi_index
 
-    integer, parameter :: max_inipower_params = 10
+    integer, parameter :: max_inipower_params = 14
 
     real(mcp), parameter :: cl_norm = 1e-10_mcp !units for As
     integer, parameter :: max_derived_parameters = 30
@@ -111,6 +111,7 @@
         !Now remaining (non-independent) parameters
         real(mcp) omb, omc, omv, omnu, omk, omdm
         real(mcp) ombh2, omch2, omnuh2, omdmh2
+        real(mcp) q0, q1, q2, q3 !NH added 4 bin params
         real(mcp) zre, zre_delta, nufrac
         real(mcp) h, H0, tau
         real(mcp) w, wa

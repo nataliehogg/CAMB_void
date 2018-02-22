@@ -91,6 +91,12 @@
     P%omegan = CMB%omnu
     P%omegac = CMB%omc
     P%omegav = CMB%omv
+
+    P%void_qV(1) = CMB%q0
+    P%void_qV(2) = CMB%q1
+    P%void_qV(3) = CMB%q2
+    P%void_qV(4) = CMB%q3
+
     P%H0 = CMB%H0
     P%Reion%redshift= CMB%zre
     P%Reion%delta_redshift = CMB%zre_delta
