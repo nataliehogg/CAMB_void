@@ -96,12 +96,13 @@
     P%void_qV(2) = CMB%q1
     P%void_qV(3) = CMB%q2
     P%void_qV(4) = CMB%q3
+    P%void_n = 4
 
     P%H0 = CMB%H0
     P%Reion%redshift= CMB%zre
     P%Reion%delta_redshift = CMB%zre_delta
-    w_lam = CMB%w
-    wa_ppf = CMB%wa
+    w_lam = -0.9_dl!CMB%w
+    ! wa_ppf = CMB%wa
     ALens = CMB%ALens
     ALens_Fiducial = CMB%ALensf
     P%InitialConditionVector(initial_iso_CDM) = &
@@ -710,7 +711,7 @@
     !for nonlinear lensing of CMB + LSS compatibility
     Threadnum =num_threads
     w_lam = -1
-    wa_ppf = 0._dl
+    ! wa_ppf = 0._dl
     call CAMB_SetDefParams(P)
 
     HighAccuracyDefault = .true.

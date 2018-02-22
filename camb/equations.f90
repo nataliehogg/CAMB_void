@@ -28,7 +28,9 @@
 
     real(dl), parameter :: wa_ppf = 0._dl !Not used here, just for compatibility with e.g. halofit
 
-    logical :: w_perturb = .true.
+!    real(dl) :: q = 0_dl ! interaction term
+
+    logical :: w_perturb = .false.
     !If you are tempted to set this = .false. read
     ! http://cosmocoffee.info/viewtopic.php?t=811
     ! http://cosmocoffee.info/viewtopic.php?t=512
@@ -41,6 +43,13 @@
 
     w_lam = Ini_Read_Double_File(Ini,'w', -1.d0)
     cs2_lam = Ini_Read_Double_File(Ini,'cs2_lam',1.d0)
+    !VOID: we can add here our extra parameter(s)
+
+    ! I addded the interaction term q as a new parameter
+
+   ! q = Ini_Read_Double_File(Ini, 'q', 0.d0)
+   ! write(0,*) 'qread=',q
+
 
     end subroutine DarkEnergy_ReadParams
 
@@ -72,21 +81,35 @@
     use ModelParams
     use MassiveNu
     use LambdaGeneral
+    use VOID_utilities
     implicit none
     real(dl) dtauda
     real(dl), intent(IN) :: a
-    real(dl) rhonu,grhoa2, a2
+    real(dl) rhonu,grhoa2, a2,grhov_t,grhoc_t
     integer nu_i
 
+    !VOID: here we must change the evolution with a of DE (grhov)
+    !and DM grhoc using Eqs. (22, 23) of the old draft
     a2=a**2
 
-    !  8*pi*G*rho*a**4.
-    grhoa2=grhok*a2+(grhoc+grhob)*a+grhog+grhornomass
-    if (w_lam == -1._dl) then
-        grhoa2=grhoa2+grhov*a2**2
+    !  8*pi*G*rho*a**4
+    grhoa2=grhok*a2+grhob*a+grhog+grhornomass    ! I removed grhoc from this sum as we need to add the effect of q within the if statement
+
+    if (w_lam == -1._dl) then ! we set w != -1 in params.ini to avoid this track
+        grhoa2=grhoa2+grhov*a2**2+grhoc*a
     else
-        grhoa2=grhoa2+grhov*a**(1-3*w_lam)
+      ! grhoa2 = grhoa2 + grhov*a**(-CP%qV+4._dl) + (grhoc*a*(CP%qV-3)+ &
+      ! & CP%qV*grhov*(a-a**(-CP%qV+4.)))/(CP%qV-3) !SPmod
+
+      ! grhoa2 = grhoa2 + grhov*a**(-void_qV(a)+4._dl) + (grhoc*a*(void_qV(a)-3)+ &
+      ! & void_qV(a)*grhov*(a-a**(-void_qV(a)+4.)))/(void_qV(a)-3) !SPmod
+
+      call void_compute_background(a, grhov_t,grhoc_t)
+      grhoa2 = grhoa2 + grhov_t*a**(+2._dl) + grhoc_t*a**(+2._dl)!SPmod
+
+!        grhoc*a**(-3) + grhov*(q/(-3 + q))*(a**(-3) - a**(-q)))*a2 ! I added grhov and grhoc with the interaction here
     end if
+
     if (CP%Num_Nu_massive /= 0) then
         !Get massive neutrino density relative to massless
         do nu_i = 1, CP%nu_mass_eigenstates
@@ -523,6 +546,8 @@
     maxeq = maxeq +  (EV%lmaxg+1)+(EV%lmaxnr+1)+EV%lmaxgpol-1
 
     !Dark energy
+    !VOID: here is the inclusion of DE in the index system.
+    !In principle we don't need to change this, but in case it is needed, here it is
     if (w_lam /= -1 .and. w_Perturb) then
         EV%w_ix = neq+1
         neq=neq+2
@@ -583,6 +608,8 @@
 
     yout=0
     yout(1:basic_num_eqns) = y(1:basic_num_eqns)
+    !VOID: if we eventually change the indexing, also this part
+    !will need to be changed
     if (w_lam /= -1 .and. w_Perturb) then
         yout(EVout%w_ix)=y(EV%w_ix)
         yout(EVout%w_ix+1)=y(EV%w_ix+1)
@@ -1181,6 +1208,7 @@
     use ThermoData
     use lvalues
     use ModelData
+    use VOID_utilities
     implicit none
     integer j
     type(EvolutionVars) EV
@@ -1200,6 +1228,9 @@
     real(dl) clxq, vq, diff_rhopi, octg, octgprime
     real(dl) sources(CTransScal%NumSources)
     real(dl) ISW
+    real(dl) redshift, a_1, a_2, a_3
+    integer ::ii
+
 
     yprime = 0
     call derivs(EV,EV%ScalEqsToPropagate,tau,y,yprime)
@@ -1228,12 +1259,18 @@
     !  Compute expansion rate from: grho 8*pi*rho*a**2
 
     grhob_t=grhob/a
-    grhoc_t=grhoc/a
+!    grhoc_t=grhoc*a**(-3) + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqn (23)
+  ! grhoc_t=(grhoc*a**CP%qV*(CP%qV-3)+grhov*(CP%qV*a**CP%qV-CP%qV*a**3._dl))*a**(-CP%qV-1._dl)/(CP%qV-3)!MMmod
+    ! grhoc_t=(grhoc*a**void_qV(a)*(void_qV(a)-3)+grhov*(void_qV(a)*a**void_qV(a)-void_qV(a)*a**3._dl))*a**(-void_qV(a)-1._dl)/(void_qV(a)-3)!MMmod
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
-    grhov_t=grhov*a**(-1-3*w_lam)
+    ! grhov_t=grhov*a**(-CP%qV+2) !VOID: change dependence from scale factor with Eqn (22)
+
+    call void_compute_background(a, grhov_t,grhoc_t)
+
     grho=grhob_t+grhoc_t+grhor_t+grhog_t+grhov_t
-    gpres=(grhog_t+grhor_t)/3+grhov_t*w_lam
+    ! gpres=(grhog_t+grhor_t)/3+grhov_t*(-CP%qV) !VOID: change dependence from scale factor with Eqs. (22, 23) (changed w_lam for -q)
+    gpres=(grhog_t+grhor_t)/3+grhov_t*(-1._dl) !VOID: change dependence from scale factor with Eqs. (22, 23) (changed w_lam for -q)
 
     !  8*pi*a*a*SUM[rho_i*clx_i] add radiation later
     dgrho=grhob_t*clxb+grhoc_t*clxc
@@ -1250,6 +1287,8 @@
     end if
 
     if (w_lam /= -1 .and. w_Perturb) then
+    !VOID: these are the equations for the evolution of DE perturbations.
+    !These need to be changed with Eqs.(14,16)
         clxq=y(EV%w_ix)
         vq=y(EV%w_ix+1)
         dgrho=dgrho + clxq*grhov_t
@@ -1401,6 +1440,20 @@
             sources(3) = 0
         end if
     end if
+
+
+    !open(22, file='res/coupling.dat')
+    !open(11, file='res/densities.dat')
+    !do ii=1,10000
+     !  a = ii*(1.-0.001)/10000
+     !  call void_compute_background(a, grhov_t,grhoc_t)
+     !  !VOID: print background densities for check
+     !  write(11,*)a, grhov_t/grhov/a**2,  grhoc_t/grhoc*a
+     !  write(22,*)a, void_qV_fun(a)
+    !end do
+    !close(11)
+    !close(22)
+    !stop
 
     end subroutine output
 
@@ -1625,6 +1678,9 @@
     a2=a*a
 
     initv=0
+
+    !VOID: here initial conditions for all differential equations are set.
+    !Do we need to change this? (to be checked)
 
     !  Set adiabatic initial conditions
 
@@ -1923,6 +1979,7 @@
     !  ayprime is not necessarily GaugeInterface.yprime, so keep them distinct
     use ThermoData
     use MassiveNu
+    use VOID_utilities
     implicit none
     type(EvolutionVars) EV
 
@@ -1967,14 +2024,21 @@
     !  Compute expansion rate from: grho 8*pi*rho*a**2
 
     grhob_t=grhob/a
-    grhoc_t=grhoc/a
+    !grhoc_t=grhoc/a + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqs. (22, 23)
+    ! grhoc_t=(grhoc*a**CP%qV*(CP%qV-3)+grhov*(CP%qV*a**CP%qV-CP%qV*a**3._dl))*a**(-CP%qV-1._dl)/(CP%qV-3)!MMmod
+    ! grhoc_t=(grhoc*a**void_qV(a)*(void_qV(a)-3)+grhov*(void_qV(a)*a**void_qV(a)-void_qV(a)*a**3._dl))*a**(-void_qV(a)-1._dl)/(void_qV(a)-3)!MMmod
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
-    if (w_lam==-1._dl) then
+    if (w_lam==-1._dl) then !VOID: change dependence from scale factor with Eqs. (22, 23)
         grhov_t=grhov*a2
     else
-        grhov_t=grhov*a**(-1-3*w_lam)
+      ! grhov_t = grhov*a**(-CP%qV+2)
+      ! grhov_t = grhov*a**(-void_qV(a)+2)
+
+      call void_compute_background(a, grhov_t,grhoc_t)
+
     end if
+
 
     !  Get sound speed and ionisation fraction.
     if (EV%TightCoupling) then
@@ -2009,6 +2073,8 @@
     dgrho = dgrho_matter
 
     if (w_lam /= -1 .and. w_Perturb) then
+    !VOID: here differential equations for DE perturbations again
+    !change with Eqs.(14,16)
         clxq=ay(EV%w_ix)
         vq=ay(EV%w_ix+1)
         dgrho=dgrho + clxq*grhov_t
@@ -2073,7 +2139,7 @@
         ayprime(2)=0.5_dl*dgq + CP%curv*z
     end if
 
-    if (w_lam /= -1 .and. w_Perturb) then
+    if (w_lam /= -1 .and. w_Perturb) then !VOID: change for new DE clustering Eqs.(14,16)
         ayprime(EV%w_ix)= -3*adotoa*(cs2_lam-w_lam)*(clxq+3*adotoa*(1+w_lam)*vq/k) &
             -(1+w_lam)*k*vq -(1+w_lam)*k*z
 
@@ -2103,7 +2169,11 @@
     end if
 
     !  CDM equation of motion
-    clxcdot=-k*z
+    !VOID: Equations for DM here. change for new DM clustering
+    !use Eqs.(13,15)
+
+    clxcdot=-k*z -void_qV_fun(a)*adotoa*grhov_t/grhoc_t*clxc  !SPmod
+
     ayprime(3)=clxcdot
 
     !  Baryon equation of motion.
@@ -2495,6 +2565,7 @@
     !  Evaluate the time derivatives of the tensor perturbations.
     use ThermoData
     use MassiveNu
+    use VOID_utilities
     implicit none
     type(EvolutionVars) EV
     integer n,l,i,ind, nu_i
@@ -2523,13 +2594,17 @@
     ! Compute expansion rate from: grho=8*pi*rho*a**2
     ! Also calculate gpres: 8*pi*p*a**2
     grhob_t=grhob/a
-    grhoc_t=grhoc/a
+!    grhoc_t=grhoc/a + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqs. (22, 23)
+    ! grhoc_t=(grhoc*a**CP%qV*(CP%qV-3)+grhov*(CP%qV*a**CP%qV-CP%qV*a**3._dl))*a**(-CP%qV-1._dl)/(CP%qV-3)!MMmod
+    ! grhoc_t=(grhoc*a**void_qV(a)*(void_qV(a)-3)+grhov*(void_qV(a)*a**void_qV(a)-void_qV(a)*a**3._dl))*a**(-void_qV(a)-1._dl)/(void_qV(a)-3)!MMmod
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
-    if (w_lam==-1._dl) then
-        grhov_t=grhov*a2
+    if (w_lam==-1._dl) then!VOID: change dependence from scale factor with Eqs. (22, 23)
+      grhov_t=grhov*a2
     else
-        grhov_t=grhov*a**(-1-3*w_lam)
+
+      call void_compute_background(a, grhov_t,grhoc_t)
+
     end if
 
     grho=grhob_t+grhoc_t+grhor_t+grhog_t+grhov_t
@@ -2693,8 +2768,6 @@
     aytprime(2)=-k*shear
 
     end subroutine derivst
-
-
 
     !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 

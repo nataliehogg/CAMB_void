@@ -3224,23 +3224,13 @@
         use ModelParams
         implicit none
         real(dl), intent(in) :: a
-        real(dl) :: z
         real(dl):: void_qV_fun
         integer :: i
 
         i = int((1._dl - a)*CP%void_n) + 1
 
+        ! binned solutions for N bins
         void_qV_fun = CP%void_qV(i)
-
-        ! if (a < 1._dl .and. a>=0.75_dl)  then
-        !   void_qV_fun =CP%void_qV(1)
-        ! else if(a < .75_dl .and. a>=0.5_dl ) then
-        !   void_qV_fun = CP%void_qV(2)
-        ! else if(a < 0.5_dl .and. a>=0.25_dl ) then
-        !   void_qV_fun = CP%void_qV(3)
-        ! else if(a < 0.25_dl ) then
-        !   void_qV_fun = CP%void_qV(4)
-        ! end if
 
         return
 
@@ -3253,11 +3243,9 @@
         real(dl), intent(in) :: a
         real(dl), intent(out):: grhov_t, grhoc_t
         real(dl) :: a2
-        ! real(dl) :: grhoc_3, V_3,grhoc_2, V_2,grhoc_1, V_1
+        real(dl) :: grhoc_3, V_3,grhoc_2, V_2,grhoc_1, V_1
         integer :: i, j, a_i
         real(dl), dimension(0 : CP%void_n) :: a_bound, grhoc_bound, grhov_bound
-
-! here is a random modifcation
 
         a2=a*a
 
@@ -3285,8 +3273,7 @@
             grhov_bound(j) = grhov_bound(j-1)*(a_bound(j)/a_bound(j-1))**(-CP%void_qV(j))
 
             grhoc_bound(j) = grhoc_bound(j-1)*(a_bound(j)/a_bound(j-1))**(-3._dl) &
-                    & + grhov_bound(j-1)*(CP%void_qV(j)/(CP%void_qV(j) - 3._dl))*((a_bound(j)/a_bound(j-1))**(-3._dl) - &
-                    & (a_bound(j)/a_bound(j-1))**(-CP%void_qV(j)))
+                    &+ grhov_bound(j-1)*(CP%void_qV(j)/(CP%void_qV(j) - 3._dl))*((a_bound(j)/a_bound(j-1))**(-3._dl) - (a_bound(j)/a_bound(j-1))**(-CP%void_qV(j)))
 
           end do
         end if
@@ -3294,45 +3281,7 @@
         grhov_t = grhov_bound(i-1)*(a/a_bound(i-1))**(-CP%void_qV(i))*a2
 
         grhoc_t = (grhoc_bound(i-1)*(a/a_bound(i-1))**(-3._dl) &
-                &+ grhov_bound(i-1)*(CP%void_qV(i)/(CP%void_qV(i) - 3._dl))*((a/a_bound(i-1))**(-3._dl) - &
-                & (a/a_bound(i-1))**(-CP%void_qV(i))))*a2
-        ! if (i == 1) then
-        !
-        !   write(111,*) a, a_bound(i-1),grhoc_t,CP%void_qV(i)
-        !
-        ! end if
-
-
-        ! grhoc_3 = grhoc*a_3**(-3.)+grhov*CP%qv_34/(CP%qv_34-3._dl)*(a_3**(-3.)- a_3**(-CP%qv_34))
-        ! V_3 = grhov*a_3**(-CP%qv_34)
-        ! grhoc_2 = grhoc_3*(a_2/a_3)**(-3.)+V_3*CP%qv_23/(CP%qv_23-3._dl)*((a_2/a_3)**(-3.)- (a_2/a_3)**(-CP%qv_23))
-        ! V_2 = grhov*a_3**(-CP%qv_34)*(a_2/a_3)**(-CP%qv_23)
-        ! grhoc_1 = grhoc_2*(a_1/a_2)**(-3.)+V_2*CP%qv_12/(CP%qv_12-3._dl)*((a_1/a_2)**(-3.)- (a_1/a_2)**(-CP%qv_12))
-        ! V_1 = grhov*a_3**(-CP%qv_34)*(a_2/a_3)**(-CP%qv_23)*(a_1/a_2)**(-CP%qv_12)
-        !
-        ! if (a==0._dl) return
-        !
-        ! if (a >a_3) then
-        !
-        !   grhov_t=grhov*a**(-CP%qV_34+2)
-        !   grhoc_t = (grhoc*a**(-3.) +grhov*CP%qv_34/(CP%qv_34 -3._dl)*( a**(-3.) -a**(-CP%qv_34) ))*a2
-        !
-        ! else if (a<=a_3 .and. a>a_2) then
-        !
-        !   grhov_t =grhov*(a_3)**(-CP%qv_34)*(a/a_3)**(-CP%qv_23)*a2
-        !   grhoc_t = (grhoc_3*(a/a_3)**(-3.) +V_3*CP%qv_23/(CP%qv_23 -3._dl)*( (a/a_3)**(-3.) -(a/a_3)**(-CP%qv_23) ))*a2
-        !
-        ! else if (a<=a_2.and. a>a_1) then
-        !
-        !   grhov_t =grhov*(a_3)**(-CP%qv_34)*(a_2/a_3)**(-CP%qv_23)*(a/a_2)**(-CP%qv_12)*a2
-        !   grhoc_t =(grhoc_2*(a/a_2)**(-3.) +V_2*CP%qv_12/(CP%qv_12 -3._dl)*( (a/a_2)**(-3.) -(a/a_2)**(-CP%qv_12) ))*a2
-        !
-        ! else if (a<=a_1) then
-        !
-        !   grhov_t =grhov*(a_3)**(-CP%qv_34)*(a_2/a_3)**(-CP%qv_23)*(a_1/a_2)**(-CP%qv_12)*(a/a_1)**(-CP%qv_01)*a2
-        !   grhoc_t =(grhoc_1*(a/a_1)**(-3.) +V_1*CP%qv_01/(CP%qv_01 -3._dl)*( (a/a_1)**(-3.) -(a/a_1)**(-CP%qv_01) ))*a2
-        !
-        ! end if
+                &+ grhov_bound(i-1)*(CP%void_qV(i)/(CP%void_qV(i) - 3._dl))*((a/a_bound(i-1))**(-3._dl) - (a/a_bound(i-1))**(-CP%void_qV(i))))*a2
 
         return
 
