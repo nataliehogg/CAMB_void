@@ -85,6 +85,7 @@
     type(CAMBParams)  P
     real(dl) neff_massive_standard, mnu, m1, m3, normal_frac
     real(dl), external :: Newton_raphson
+    integer :: i
 
     P = this%CAMBP
     P%omegab = CMB%omb
@@ -92,11 +93,15 @@
     P%omegac = CMB%omc
     P%omegav = CMB%omv
 
-    P%void_qV(1) = CMB%q0
-    P%void_qV(2) = CMB%q1
-    P%void_qV(3) = CMB%q2
-    P%void_qV(4) = CMB%q3
-    P%void_n = 4
+    P%numvoidbins = CosmoSettings%void_n
+    do i=1, CosmoSettings%void_n
+    P%zbins(i) = CMB%void_redshift(i)
+    P%qbins(i) = CMB%void_qV(i)
+  end do
+
+  P%void_model = CMB%void_model
+  P%endred = CMB%endred
+  if (P%void_model.eq.2) P%smoothfactor= CMB%smoothfactor
 
     P%H0 = CMB%H0
     P%Reion%redshift= CMB%zre

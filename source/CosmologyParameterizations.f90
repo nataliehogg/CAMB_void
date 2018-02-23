@@ -71,7 +71,10 @@
     call Names%AddDerivedRange('H0', this%H0_min, this%H0_max)
     this%num_derived = Names%num_derived
     !set number of hard parameters, number of initial power spectrum parameters
-    call this%SetTheoryParameterNumbers(20,last_power_index) !NH increased no. of params
+
+    call Ini%Read('number_of_bins',CosmoSettings%void_n)
+
+    call this%SetTheoryParameterNumbers(19+2*CosmoSettings%void_n,last_power_index) !NH increased no. of params
 
     end subroutine TP_Init
 
@@ -287,6 +290,7 @@
     Type(CMBParams) CMB
     real(mcp) h2,H0
     integer, optional :: error
+    integer :: j
 
     CMB%H0=H0
     if (firsttime) then
@@ -330,10 +334,16 @@
         CMB%ALensf = Params(15)
         CMB%fdm = Params(16)
 
-        CMB%q0 = Params(17) !NH added 4 bin params
-        CMB%q1 = Params(18)
-        CMB%q2 = Params(19)
-        CMB%q3 = Params(20)
+        CMB%endred = Params(17)
+        CMB%void_model =Params(18)
+        CMB%smoothfactor = Params(19)
+
+        do j =1,CosmoSettings%void_n
+          CMB%void_qV(j) = Params(19+j)
+          CMB%void_redshift(j) =Params(19+CosmoSettings%void_n+j)
+        end do
+
+
         call SetFast(Params,CMB)
     end if
 

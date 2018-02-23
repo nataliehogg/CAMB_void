@@ -8,6 +8,7 @@
     integer, parameter :: derived_age=1, derived_zstar=2, derived_rstar=3, derived_thetastar=4, derived_DAstar = 5, &
         derived_zdrag=6, derived_rdrag=7,derived_kD=8,derived_thetaD=9, derived_zEQ =10, derived_keq =11, &
         derived_thetaEQ=12, derived_theta_rs_EQ = 13 !index in derived parameters array
+   integer, parameter :: n_max = 100
 
     integer, parameter :: As_index=1, ns_index =2, nrun_index=3, nrunrun_index=4, amp_ratio_index = 5, &
         & nt_index= 6, ntrun_index = 7, Aphiphi_index = 8, last_power_index = Aphiphi_index
@@ -31,7 +32,7 @@
         logical :: Use_LSS = .false.
         logical :: Use_CMB = .false.
         logical :: use_nonlinear = .false.    !JD for WiggleZ MPK
-
+        integer :: void_n
         !l_max. Tensors are not computed unless compute_tensors = T in input file
         !Make these multiples of 50, should be 50 more than you need accurately
         integer :: lmax = 0
@@ -111,7 +112,10 @@
         !Now remaining (non-independent) parameters
         real(mcp) omb, omc, omv, omnu, omk, omdm
         real(mcp) ombh2, omch2, omnuh2, omdmh2
-        real(mcp) q0, q1, q2, q3 !NH added 4 bin params
+        ! integer void_n ! number of bins
+        real(mcp) void_qV(n_max)
+        real(mcp) void_redshift(n_max)
+        real(mcp) endred, void_model, smoothfactor
         real(mcp) zre, zre_delta, nufrac
         real(mcp) h, H0, tau
         real(mcp) w, wa
