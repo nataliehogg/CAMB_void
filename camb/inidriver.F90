@@ -28,6 +28,8 @@
     character(LEN=Ini_max_string_len) TransferFileNames(max_transfer_redshifts), &
         MatterPowerFileNames(max_transfer_redshifts), outroot, version_check
     real(dl) output_factor, nmassive
+    !MMmod: auxiliary variable for coupling bins
+    character(LEN=Ini_max_string_len) binnum
 
 #ifdef WRITE_FITS
     character(LEN=Ini_max_string_len) FITSfilename
@@ -115,6 +117,34 @@
         P%omegav = Ini_Read_Double('omega_lambda')
         P%omegan = Ini_Read_Double('omega_neutrino')
     end if
+
+    !MMmod: reading parameters for interacting void
+    P%void_model = Ini_Read_Int('void_model',1)
+    P%endred     = Ini_Read_Double('ending_z',10._dl)
+
+
+    !MMmod: reading specific parameters for different coupling models
+    if ((P%void_model.eq.1).or.(P%void_model.eq.2)) then
+       P%numvoidbins = Ini_Read_Int('num_bins',1)
+       if (P%void_model.eq.2) P%smoothfactor= Ini_Read_Double('smooth_factor',10._dl) !smooth factor not needed for theta binning
+       do i=1,P%numvoidbins
+          write(binnum,*) i
+          P%zbins(i) = Ini_Read_Double('bin_redshift_'//trim(adjustl(binnum)))
+          P%qbins(i) = Ini_Read_Double('bin_q_'//trim(adjustl(binnum)),0._dl)
+       end do
+       if (P%zbins(P%numvoidbins).gt.P%endred) then
+          write(*,*) 'WARNING!!!'
+          write(*,*) 'final redshift for ODE (',P%endred,') is lower than last bin margin ',P%zbins(P%numvoidbins)
+          write(*,*) 'You need final redshift to be higher. Fix this and re-run the code. '
+          stop
+       end if
+    else
+       write(*,*) 'ONLY BINNED COUPLING IMPLEMENTED AT THE MOMENT'
+       write(*,*) 'PLEASE WAIT FOR MORE FANCY STUFF!'
+    end if
+
+
+
 
     P%tcmb   = Ini_Read_Double('temp_cmb',COBE_CMBTemp)
     P%yhe    = Ini_Read_Double('helium_fraction',0.24_dl)

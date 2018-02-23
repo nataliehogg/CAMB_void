@@ -19,6 +19,7 @@
 
     module LambdaGeneral
     use precision
+    use initsolver
     implicit none
 
     real(dl)  :: w_lam = -1_dl !p/rho for the dark energy (assumed constant)
@@ -68,9 +69,13 @@
 
 
     subroutine init_background
+    use initsolver
     !This is only called once per model, and is a good point to do any extra initialization.
     !It is called before first call to dtauda, but after
     !massive neutrinos are initialized and after GetOmegak
+
+    call deinterface(CP)
+
     end  subroutine init_background
 
 
@@ -84,8 +89,11 @@
     use VOID_utilities
     implicit none
     real(dl) dtauda
+    ! real(dl)::void_qV
     real(dl), intent(IN) :: a
-    real(dl) rhonu,grhoa2, a2,grhov_t,grhoc_t
+    real(dl) rhonu,grhoa2, a2
+    !MMmod: added densities time dependent
+    real(dl) grhoc_t, grhov_t
     integer nu_i
 
     !VOID: here we must change the evolution with a of DE (grhov)
@@ -98,16 +106,11 @@
     if (w_lam == -1._dl) then ! we set w != -1 in params.ini to avoid this track
         grhoa2=grhoa2+grhov*a2**2+grhoc*a
     else
-      ! grhoa2 = grhoa2 + grhov*a**(-CP%qV+4._dl) + (grhoc*a*(CP%qV-3)+ &
-      ! & CP%qV*grhov*(a-a**(-CP%qV+4.)))/(CP%qV-3) !SPmod
 
-      ! grhoa2 = grhoa2 + grhov*a**(-void_qV(a)+4._dl) + (grhoc*a*(void_qV(a)-3)+ &
-      ! & void_qV(a)*grhov*(a-a**(-void_qV(a)+4.)))/(void_qV(a)-3) !SPmod
+    !MMmod: getting densities from solver
+        call getrhos(a,grhoc_t,grhov_t)
+        grhoa2 = grhoa2 + grhov_t*a2*a2 + grhoc_t*a2*a2
 
-      call void_compute_background(a, grhov_t,grhoc_t)
-      grhoa2 = grhoa2 + grhov_t*a**(+2._dl) + grhoc_t*a**(+2._dl)!SPmod
-
-!        grhoc*a**(-3) + grhov*(q/(-3 + q))*(a**(-3) - a**(-q)))*a2 ! I added grhov and grhoc with the interaction here
     end if
 
     if (CP%Num_Nu_massive /= 0) then
@@ -1229,7 +1232,6 @@
     real(dl) sources(CTransScal%NumSources)
     real(dl) ISW
     real(dl) redshift, a_1, a_2, a_3
-    integer ::ii
 
 
     yprime = 0
@@ -1256,21 +1258,30 @@
     vb  =y(5)
     vbdot =yprime(5)
 
+    ! VOID: define usefull quantities
+    redshift = 1._dl/a -1._dl
+
+    a_1 = 1._dl / (2.5_dl + 1._dl)
+
+    a_2 = 1._dl / (0.9_dl + 1._dl)
+
+    a_3 = 1._dl / (0.3_dl + 1._dl)
+
     !  Compute expansion rate from: grho 8*pi*rho*a**2
 
     grhob_t=grhob/a
-!    grhoc_t=grhoc*a**(-3) + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqn (23)
-  ! grhoc_t=(grhoc*a**CP%qV*(CP%qV-3)+grhov*(CP%qV*a**CP%qV-CP%qV*a**3._dl))*a**(-CP%qV-1._dl)/(CP%qV-3)!MMmod
-    ! grhoc_t=(grhoc*a**void_qV(a)*(void_qV(a)-3)+grhov*(void_qV(a)*a**void_qV(a)-void_qV(a)*a**3._dl))*a**(-void_qV(a)-1._dl)/(void_qV(a)-3)!MMmod
+    !MMmod: GETTING DENSITIES FROM SOLVER
+    call getrhos(a,grhoc_t,grhov_t)
+    grhoc_t = grhoc_t*a2
+    !------------------------------------
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
-    ! grhov_t=grhov*a**(-CP%qV+2) !VOID: change dependence from scale factor with Eqn (22)
-
-    call void_compute_background(a, grhov_t,grhoc_t)
-
+    !MMmod-------------------------------
+    grhov_t = grhov_t*a2
+    !------------------------------------
     grho=grhob_t+grhoc_t+grhor_t+grhog_t+grhov_t
     ! gpres=(grhog_t+grhor_t)/3+grhov_t*(-CP%qV) !VOID: change dependence from scale factor with Eqs. (22, 23) (changed w_lam for -q)
-    gpres=(grhog_t+grhor_t)/3+grhov_t*(-1._dl) !VOID: change dependence from scale factor with Eqs. (22, 23) (changed w_lam for -q)
+    gpres=(grhog_t+grhor_t)/3-grhov_t !VOID: change dependence from scale factor with Eqs. (22, 23) (changed w_lam for -q)
 
     !  8*pi*a*a*SUM[rho_i*clx_i] add radiation later
     dgrho=grhob_t*clxb+grhoc_t*clxc
@@ -1440,20 +1451,6 @@
             sources(3) = 0
         end if
     end if
-
-
-    !open(22, file='res/coupling.dat')
-    !open(11, file='res/densities.dat')
-    !do ii=1,10000
-     !  a = ii*(1.-0.001)/10000
-     !  call void_compute_background(a, grhov_t,grhoc_t)
-     !  !VOID: print background densities for check
-     !  write(11,*)a, grhov_t/grhov/a**2,  grhoc_t/grhoc*a
-     !  write(22,*)a, void_qV_fun(a)
-    !end do
-    !close(11)
-    !close(22)
-    !stop
 
     end subroutine output
 
@@ -2005,6 +2002,9 @@
     real(dl) dgpi,dgrho_matter,grho_matter, clxnu_all
     !non-flat vars
     real(dl) cothxor !1/tau in flat case
+    ! real(dl)::void_qV
+    real    :: voidQ
+
 
     k=EV%k_buf
     k2=EV%k2_buf
@@ -2024,19 +2024,16 @@
     !  Compute expansion rate from: grho 8*pi*rho*a**2
 
     grhob_t=grhob/a
-    !grhoc_t=grhoc/a + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqs. (22, 23)
-    ! grhoc_t=(grhoc*a**CP%qV*(CP%qV-3)+grhov*(CP%qV*a**CP%qV-CP%qV*a**3._dl))*a**(-CP%qV-1._dl)/(CP%qV-3)!MMmod
-    ! grhoc_t=(grhoc*a**void_qV(a)*(void_qV(a)-3)+grhov*(void_qV(a)*a**void_qV(a)-void_qV(a)*a**3._dl))*a**(-void_qV(a)-1._dl)/(void_qV(a)-3)!MMmod
+    !MMmod: getting densities from solver
+    call getrhos(a,grhoc_t,grhov_t)
+    grhoc_t = grhoc_t*a2
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
     if (w_lam==-1._dl) then !VOID: change dependence from scale factor with Eqs. (22, 23)
         grhov_t=grhov*a2
     else
       ! grhov_t = grhov*a**(-CP%qV+2)
-      ! grhov_t = grhov*a**(-void_qV(a)+2)
-
-      call void_compute_background(a, grhov_t,grhoc_t)
-
+      grhov_t = grhov_t*a2
     end if
 
 
@@ -2172,8 +2169,10 @@
     !VOID: Equations for DM here. change for new DM clustering
     !use Eqs.(13,15)
 
-    clxcdot=-k*z -void_qV_fun(a)*adotoa*grhov_t/grhoc_t*clxc  !SPmod
+    !MMmod: getting coupling from the solver
+    call getcoupling(CP,real(-1+1/a),real(grhov_t/a2),voidQ)
 
+    clxcdot=-k*z +voidQ*adotoa/(grhoc_t/a2)*clxc  !SPmod
     ayprime(3)=clxcdot
 
     !  Baryon equation of motion.
@@ -2577,6 +2576,8 @@
     real(dl) Hchi,pinu, pig
     real(dl) k,k2,a,a2
     real(dl) pir, adotoa, rhonu, shear
+    ! real(dl)::void_qV
+
 
     real(dl) cothxor
 
@@ -2594,17 +2595,16 @@
     ! Compute expansion rate from: grho=8*pi*rho*a**2
     ! Also calculate gpres: 8*pi*p*a**2
     grhob_t=grhob/a
-!    grhoc_t=grhoc/a + grhov*(q / (-3 + q))*(a**(-3) - a**(-q)) !VOID: change dependence from scale factor with Eqs. (22, 23)
-    ! grhoc_t=(grhoc*a**CP%qV*(CP%qV-3)+grhov*(CP%qV*a**CP%qV-CP%qV*a**3._dl))*a**(-CP%qV-1._dl)/(CP%qV-3)!MMmod
-    ! grhoc_t=(grhoc*a**void_qV(a)*(void_qV(a)-3)+grhov*(void_qV(a)*a**void_qV(a)-void_qV(a)*a**3._dl))*a**(-void_qV(a)-1._dl)/(void_qV(a)-3)!MMmod
+    !MMmod: getting densities from solver
+    call getrhos(a,grhoc_t,grhov_t)
+    grhoc_t=grhoc_t*a2
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
     if (w_lam==-1._dl) then!VOID: change dependence from scale factor with Eqs. (22, 23)
-      grhov_t=grhov*a2
+      ! grhov_t = grhov*a**(-CP%qV+2)
+      grhov_t = grhov*a2
     else
-
-      call void_compute_background(a, grhov_t,grhoc_t)
-
+        grhov_t=grhov_t*a2
     end if
 
     grho=grhob_t+grhoc_t+grhor_t+grhog_t+grhov_t
