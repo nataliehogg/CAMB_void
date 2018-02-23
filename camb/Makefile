@@ -5,7 +5,8 @@ FISHER=
 
 #Will detect ifort/gfortran or edit for your compiler
 ifneq ($(COMPILER),gfortran)
-ifortErr = $(shell which ifort >/dev/null; echo $$?)
+ifortErr = 1
+#$(shell which ifort >/dev/null; echo $$?)
 else
 ifortErr = 1
 endif
@@ -44,8 +45,8 @@ COMPILER = gfortran
 F90C     = gfortran
 SFFLAGS =  -shared -fPIC
 
-FFLAGS =  -O3 -fopenmp -ffast-math -fmax-errors=4
-DEBUGFLAGS = -cpp -g -fbounds-check -fbacktrace -ffree-line-length-none -fmax-errors=4 -ffpe-trap=invalid,overflow,zero
+FFLAGS =  -O3 -fopenmp -ffast-math -fmax-errors=4 -ffree-line-length-none
+#FFLAGS = -cpp -g -fbounds-check -fbacktrace -ffree-line-length-none -fmax-errors=4 -ffpe-trap=invalid,overflow,zero
 MODOUT =  -J$(OUTPUT_DIR)
 SMODOUT = -J$(DLL_DIR)
 
