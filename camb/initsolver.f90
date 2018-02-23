@@ -14,7 +14,7 @@ implicit none
 !global variable for solver
 real                          :: initial_z                   !starting scale factor for ODE
 real                          :: final_z                     !final scale factor for ODE
-integer, parameter            :: nsteps    = 100000           !number of integration steps
+integer, parameter            :: nsteps    = 1000000           !number of integration steps
 real(dl), dimension(nsteps+1) :: z_ode, solmat, solvoid      !8piG/3 * rho_m and rho_v
 real(dl), dimension(nsteps+1) :: ddsolmat, ddsolvoid         !same but derivatives obtained from spline
 real                          :: coupling                    !value of the coupling parameter as taken from CAMB
