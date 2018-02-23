@@ -61,7 +61,6 @@
     !Nu_best: automatically use mixture which is fastest and most accurate
 
     integer, parameter :: max_Nu = 5 !Maximum number of neutrino species
-    integer, parameter :: void_n_max = 100 !the maximum number of bins allowed by the code (change it if you want more bins)
     integer, parameter :: max_transfer_redshifts = 150
     integer, parameter :: fileio_unit = 13 !Any number not used elsewhere will do
     integer, parameter :: outNone=1
@@ -95,6 +94,10 @@
     integer, parameter :: NonLinear_none=0, NonLinear_Pk =1, NonLinear_Lens=2
     integer, parameter :: NonLinear_both=3  !JD 08/13 added so both can be done
 
+    !MMmod: maximum nuber of bins for void coupling
+    !This is added to avoid messy allocations
+    integer, parameter :: maxbins = 1000
+
     ! Main parameters type
     type CAMBparams
 
@@ -121,10 +124,14 @@
         real(dl)  :: Nu_mass_fractions(max_nu) !The ratios of the total densities
         integer   :: Nu_mass_numbers(max_nu) !physical number per eigenstate
 
-        !MMmod: added coupling parameter as standard CAMB param
-        ! real(dl)  :: qV_01, qV_12, qV_23, qV_34
-        integer   :: void_n
-        real(dl)  :: void_qV(void_n_max)
+        !MMmod: adding parameters for interactive void
+        integer   :: void_model                 !selects the specific model to use
+        real(dl)  :: startred, endred           !redshift limits for differential equation
+        real(dl)  :: qV                         !working only with constant for now (effectively 2 bins). TO BE CHANGED
+        integer   :: numvoidbins                !number of redshift bins for void coupling
+        real(dl)  :: smoothfactor               !smoothing facto for tanh connection in binned functions
+        real(dl)  :: zbins(maxbins)             !right margin of redshift bins (first left margin is always zero)
+        real(dl)  :: qbins(maxbins)             !value of qV within each redshift bin
 
         integer   :: Scalar_initial_condition
         !must be one of the initial_xxx values defined in GaugeInterface
@@ -2346,6 +2353,10 @@
     !JD 08/13 Changes in here to PK arrays and variables
     integer j_PK
 
+! SP:
+call Transfer_Get_sigma8(MTrans)
+write(22,*) MTrans%sigma_8
+
     do in=1, CP%InitPower%nn
         if (CP%InitPower%nn>1)  write(*,*) 'Power spectrum : ', in
         do j_PK=1, CP%Transfer%PK_num_redshifts
@@ -3219,73 +3230,29 @@
 
     contains
 
-      function void_qV_fun(a)
-        use precision
-        use ModelParams
-        implicit none
-        real(dl), intent(in) :: a
-        real(dl):: void_qV_fun
-        integer :: i
+!      function void_qV(a)
+!        use precision
+!        use ModelParams
+!        implicit none
+!        real(dl), intent(in) :: a
+!        real(dl) :: z
+!        real(dl):: void_qV
+!
+!        z = 1._dl/(a) -1._dl
+!
+!        if (z > 0._dl .and. z<=0.3_dl)  then
+!          void_qV =CP%qV_34
+!        else if(z > 0.3_dl .and. z<=0.9_dl ) then
+!          void_qV = CP%qV_23
+!        else if(z > 0.9_dl .and. z<=2.5_dl ) then
+!          void_qV = CP%qV_12
+!        else if(z > 2.5_dl ) then
+!            void_qV = CP%qV_01
+!        end if
+!
+!        return
+!
+!      end function void_qV
 
-        i = int((1._dl - a)*CP%void_n) + 1
-
-        ! binned solutions for N bins
-        void_qV_fun = CP%void_qV(i)
-
-        return
-
-      end function void_qV_fun
-
-      subroutine void_compute_background(a, grhov_t,grhoc_t)
-        use precision
-        use ModelParams
-        implicit none
-        real(dl), intent(in) :: a
-        real(dl), intent(out):: grhov_t, grhoc_t
-        real(dl) :: a2
-        real(dl) :: grhoc_3, V_3,grhoc_2, V_2,grhoc_1, V_1
-        integer :: i, j, a_i
-        real(dl), dimension(0 : CP%void_n) :: a_bound, grhoc_bound, grhov_bound
-
-        a2=a*a
-
-        if (a==0._dl) return
-
-        if (a>1._dl) then
-          grhov_t = grhov
-          grhoc_t = grhoc
-          return
-        end if
-
-        do j = 0, CP%void_n
-          a_bound(j) = 1._dl - j*1._dl/CP%void_n
-          ! print*, j, a_bound(j)
-        end do
-
-        i = int((a_bound(0) - a)*CP%void_n) + 1
-
-        grhoc_bound(0) = grhoc
-        grhov_bound(0) = grhov
-
-        if (i >1) then
-          do j = 1, i-1
-
-            grhov_bound(j) = grhov_bound(j-1)*(a_bound(j)/a_bound(j-1))**(-CP%void_qV(j))
-
-            grhoc_bound(j) = grhoc_bound(j-1)*(a_bound(j)/a_bound(j-1))**(-3._dl) &
-                    &+ grhov_bound(j-1)*(CP%void_qV(j)/(CP%void_qV(j) - 3._dl))*((a_bound(j)/a_bound(j-1))**(-3._dl) - (a_bound(j)/a_bound(j-1))**(-CP%void_qV(j)))
-
-          end do
-        end if
-
-        grhov_t = grhov_bound(i-1)*(a/a_bound(i-1))**(-CP%void_qV(i))*a2
-
-        grhoc_t = (grhoc_bound(i-1)*(a/a_bound(i-1))**(-3._dl) &
-                &+ grhov_bound(i-1)*(CP%void_qV(i)/(CP%void_qV(i) - 3._dl))*((a/a_bound(i-1))**(-3._dl) - (a/a_bound(i-1))**(-CP%void_qV(i))))*a2
-
-        return
-
-
-      end subroutine void_compute_background
 
     end module VOID_utilities
