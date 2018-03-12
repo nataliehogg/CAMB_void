@@ -108,6 +108,8 @@
     P%Reion%delta_redshift = CMB%zre_delta
     w_lam = -0.9_dl!CMB%w
     ! wa_ppf = CMB%wa
+    P%baryfeed =CMB%baryfeed !SJ
+    P%barybloat = CMB%barybloat !SJ
     ALens = CMB%ALens
     ALens_Fiducial = CMB%ALensf
     P%InitialConditionVector(initial_iso_CDM) = &

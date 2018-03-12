@@ -198,9 +198,9 @@
     real(dl) :: h, gmax, error, g, g0, g1, fourj
     !
 
-    if (present(maxit)) then
-        MaxIter = maxit
-    end if
+   !SJ  if (present(maxit)) then
+       !  MaxIter = maxit
+   !  end if
     h=0.5d0*(b-a)
     gmax=h*(f(obj,a)+f(obj,b))
     g(1)=gmax

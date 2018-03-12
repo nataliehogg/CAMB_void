@@ -57,6 +57,23 @@
     generic :: Array => TSpline1D_ArrayValue, TSpline1D_IntRangeValue
     end Type TSpline1D
 
+    Type :: SInterpolator
+        private
+        logical :: initialized =.false.
+    contains
+     procedure FirstUse => SInterpolator_FirstUse
+    end Type SInterpolator
+
+    Type, extends(SInterpolator) :: SCubicSpline
+        integer n
+        real(sp_acc), dimension(:), pointer :: X => NULL()
+        real(sp_acc), dimension(:), pointer :: F => NULL(), ddF => NULL()
+    contains
+    procedure Init => SCubicSpline_Init
+    procedure Value => SCubicSpline_Value
+    FINAL :: SCubicSpline_Free
+    end Type
+
 
     Type, extends(TSpline1D) :: TCubicSpline
         ! 1D cubic spline interpolator with irregular monotonic X spacing
@@ -109,8 +126,6 @@
     contains
     procedure :: Init => TInterpGrid2D_Init
     procedure :: InitFromFile => TInterpGrid2D_InitFromFile
-    procedure :: InitFromMatrixTextFile => TInterpGrid2D_InitFromMatrixTextFile
-    procedure :: InitFromMatrixBinaryFile => TInterpGrid2D_InitFromMatrixBinaryFile
     procedure :: Value => TInterpGrid2D_Value !one point
     procedure :: Values => TInterpGrid2D_Values !array of points
     procedure :: Clear => TInterpGrid2D_Clear
@@ -119,7 +134,7 @@
     end Type TInterpGrid2D
 
 
-    public TInterpolator1D, TSpline1D, TCubicSpline, TRegularCubicSpline, TInterpGrid2D, SPLINE_DANGLE
+    public TInterpolator1D, TSpline1D, TCubicSpline, TRegularCubicSpline, TInterpGrid2D, SInterpolator, SCubicSpline, SPLINE_DANGLE
 
     contains
 
@@ -130,6 +145,14 @@
     call this%error('TInterpolator not initialized')
 
     end subroutine TInterpolator_FirstUse
+
+    subroutine SInterpolator_FirstUse(W)
+    class(SInterpolator) W
+
+    W%Initialized = .true.
+    stop 'SInterpolator not initialized'
+
+    end subroutine SInterpolator_FirstUse
 
     subroutine TInterpolator_error(this,S,v1,v2)
     class(TInterpolator):: this
@@ -384,6 +407,90 @@
     allocate(this%X(this%n))
 
     end subroutine TCubicSpline_InitForSize
+
+
+    subroutine SCubicSpline_Init(D, Xarr,  values, n, End1, End2 )
+    class(SCubicSpline) :: D
+    real(sp_acc), intent(in) :: Xarr(:), values(:)
+    integer, intent(in), optional :: n
+    real(sp_acc), intent(in), optional :: End1, End2
+    real(sp_acc) :: e1,e2
+
+    if (present(End1)) then
+        e1 = End1
+    else
+        e1 = SPLINE_DANGLE
+    end if
+
+    if (present(End2)) then
+        e2 = End2
+    else
+        e2 = SPLINE_DANGLE
+    end if
+
+    if (present(n)) then
+        D%n = n
+    else
+        D%n = size(Xarr)
+    end if
+
+    allocate(D%F(n))
+    D%F = values(1:n)
+    allocate(D%X(n))
+    D%X = Xarr(1:n)
+    allocate(D%ddF(n))
+    call spline(Xarr,values,n,e1,e2,D%ddF)
+    D%Initialized = .true.
+
+    end subroutine SCubicSpline_Init
+
+    subroutine SCubicSpline_Free(D)
+    Type(SCubicSpline) :: D
+
+    deallocate(D%X)
+    nullify(D%X)
+    deallocate(D%F)
+    nullify(D%F)
+    deallocate(D%ddF)
+    nullify(D%ddF)
+    D%Initialized = .false.
+
+    end subroutine SCubicSpline_Free
+
+    function SCubicSpline_Value(D, x, error )
+    class(SCubicSpline) :: D
+    real(sp_acc) :: SCubicSpline_Value
+    real(sp_acc), intent(in) :: x
+    integer, intent(inout), optional :: error !initialize to zero outside, changed if bad
+    integer llo,lhi
+    real(sp_acc) a0,b0,ho
+
+    if (.not. D%Initialized) call D%FirstUse
+
+    if (x< D%X(1) .or. x> D%X(D%n)) then
+        if (present(error)) then
+            error = -1
+            SCubicSpline_Value=0
+            return
+        else
+            write (*,*) 'SCubicSpline_Value: out of range ', x
+            stop
+        end if
+    end if
+
+    llo=1
+    do while (D%X(llo+1) < x)  !could do binary search here if large
+        llo = llo + 1
+    end do
+
+    lhi=llo+1
+    ho=D%X(lhi)-D%X(llo)
+    a0=(D%X(lhi)-x)/ho
+    b0=(x-D%X(llo))/ho
+    SCubicSpline_Value = a0*D%F(llo)+ b0*D%F(lhi)+((a0**3-a0)* D%ddF(llo) &
+    +(b0**3-b0)*D%ddF(lhi))*ho**2/6.
+
+    end function SCubicSpline_Value
 
 
     subroutine TCubicSpline_Init(this, Xarr,  values, n, End1, End2 )
@@ -764,48 +871,15 @@
     allocate(this%x, source = x)
     allocate(this%y, source = y)
     allocate(this%z, source = z)
+ !   allocate(this%x(this%nx), source = x)
+ !   allocate(this%y(this%ny), source = y)
+ !   allocate(this%z(size(z,1),size(z,2)), source = z)
 
     call this%InitInterp()
 
     end subroutine TInterpGrid2D_Init
 
-    subroutine TInterpGrid2D_InitFromMatrixTextFile(this, Filename, colvals, rowvals)
-    class(TInterpGrid2D):: this
-    character(LEN=*), intent(in) :: Filename
-    real(sp_acc), intent(in) :: colvals(:), rowvals(:)
-
-    call this%Clear()
-    this%ny = size(colvals)
-    this%nx = size(rowvals)
-    allocate(this%z(this%nx, this%ny))
-    call File%ReadTextMatrix(Filename, this%z)
-    allocate(this%x, source = rowvals)
-    allocate(this%y, source = colvals)
-    call this%InitInterp()
-
-    end subroutine TInterpGrid2D_InitFromMatrixTextFile
-
-    subroutine TInterpGrid2D_InitFromMatrixBinaryFile(this, Filename, colvals, rowvals)
-    class(TInterpGrid2D):: this
-    character(LEN=*), intent(in) :: Filename
-    real(sp_acc), intent(in) :: colvals(:), rowvals(:)
-    Type(TBinaryFile) :: F
-
-    call this%Clear()
-    this%ny = size(colvals)
-    this%nx = size(rowvals)
-    allocate(this%z(this%nx, this%ny))
-    call F%OpenFile(Filename, mode='binary')
-    call F%Read(this%z)
-    call F%Close()
-    allocate(this%x, source = rowvals)
-    allocate(this%y, source = colvals)
-    call this%InitInterp()
-
-    end subroutine TInterpGrid2D_InitFromMatrixBinaryFile
-
     subroutine TInterpGrid2D_InitFromFile(this, Filename, xcol, ycol, zcol)
-    !Load from file with rows of x, y, value
     class(TInterpGrid2D):: this
     character(LEN=*), intent(in) :: Filename
     integer, intent(in), optional :: xcol, ycol, zcol

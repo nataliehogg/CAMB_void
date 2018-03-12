@@ -116,6 +116,7 @@
 
         real(dl)  :: omegab, omegac, omegav, omegan
         !Omega baryon, CDM, Lambda and massive neutrino
+        real(dl) :: baryfeed, barybloat !SJ
         real(dl)  :: H0,TCMB,yhe,Num_Nu_massless
         integer   :: Num_Nu_massive !sum of Nu_mass_numbers below
         integer   :: Nu_mass_eigenstates  !1 for degenerate masses
