@@ -61,6 +61,9 @@
     this%speed = -1
     this%num_z = 37
     this%size_cov = 180 !nzbins*(nzbins+1)*nangbins --- 4*5*(9+9)
+    if (use_nl == .true.) then
+     this%needs_weylpower = .true. !NHmod
+    endif
     call this%ReadDatasetFile(DataSets%Value(1))
 !    this%LikelihoodType = 'CosmicShear'
     this%tag = DataSets%Name(1)
@@ -725,11 +728,19 @@ print *, 'this%thetacfhtini',this%thetacfhtini
         kmaxsj = 100.0d0 !kmaxsjhoho
         deltafinal = 0.0d0
         if(kval < kminsj) obj%kline = obj%kline + 1
-        if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK%PowerAt(kval,zlens)
-	hubblez = Hofz(zlens)
+        if (use_nl== .true.) then
+         if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK%PowerAt(kval,zlens)
+        else
+         if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK_WEYL%PowerAt(kval,zlens) !NHmod
+        endif
+        hubblez = Hofz(zlens)
         weightpart = 3.0d0/2.0d0*(obj%omdmomp+obj%ombomp)*(obj%h0omp/ckms)**2.0d0*distz*(1.0d0+zlens)
-        sjclsobjnoweight = 1.0d0/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0
-
+        if (use_nl ==.true.) then
+         sjclsobjnoweight = 1.0d0/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0
+        else
+         sjclsobjnoweight = 1.0d0/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0/(9.0d0/4.0d0*(obj%h0omp/ckms)**4.0d0*(obj%omdmomp & 
+                            & +obj%ombomp)**2.0d0/(obj%homp)**3.0d0*(1.0d0+zlens)**2.0d0)
+        endif
     END function sjclsobjnoweight
 
     !weight for trapezoid integration
@@ -778,7 +789,11 @@ print *, 'this%thetacfhtini',this%thetacfhtini
         kmaxsj = 100.0d0 !kmaxsjhihi
         deltafinal = 0.0d0
         if(kval < kminsj) obj%kline = obj%kline + 1
-        if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK%PowerAt(kval,zlens)
+        if (use_nl== .true.) then
+         if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK%PowerAt(kval,zlens)
+       	else
+         if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK_WEYL%PowerAt(kval,zlens) !NHmod
+        endif
 	hubblez = Hofz(zlens)
         weightpart = 3.0d0/2.0d0*(obj%omdmomp+obj%ombomp)*(obj%h0omp/ckms)**2.0d0*distz*(1.0d0+zlens)
         obj%wchooseomp = 1
@@ -789,8 +804,11 @@ print *, 'this%thetacfhtini',this%thetacfhtini
             obj%wchooseomp = 2
             weight2 = weightpart*rombint_obj(obj,weightobjcubic,zlens,obj%mumax2omp,obj%tol_erroromp)
         end if
+        if (use_nl ==.true.) then !NHmod
         sjclsobjsf = ((1.0d0+zlens)**2.0d0)*weight1*weight2/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0
-
+        else
+       sjclsobjsf = ((1.0d0+zlens)**2.0d0)*weight1*weight2/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0/(9.0d0/4.0d0*(obj%h0omp/ckms)**4.0d0*(obj%omdmomp &
+                            & +obj%ombomp)**2.0d0/(obj%homp)**3.0d0*(1.0d0+zlens)**2.0d0)
     END function sjclsobjsf
 
 
@@ -809,7 +827,11 @@ print *, 'this%thetacfhtini',this%thetacfhtini
         kminsj = 1.0d-5
         kmaxsj = 100.0d0 !kmaxsjhihi
         deltafinal = 0.0d0
-        if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK%PowerAt(kval,zlens)
+        if (use_nl== .true.) then
+         if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK%PowerAt(kval,zlens)
+        else
+         if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK_WEYL%PowerAt(kval,zlens) !NHmod
+        endif 
         growthnorm = obj%gcubicomp%Value(zlens)
         deltafinal = deltafinal*((obj%lumarromp(obj%momp(1))*obj%lumarromp(obj%momp(2)))**obj%lumiayesomp)*(-obj%ampiayesomp*5.0d-14*2.77536627d11*(obj%omdmomp+obj%ombomp)*growthnorm*((1.0d0+zlens)/(1.0d0+0.3d0))**obj%redziayesomp)**2.0d0
 	hubblez = Hofz(zlens)
@@ -821,8 +843,12 @@ print *, 'this%thetacfhtini',this%thetacfhtini
             obj%wchooseomp = 2
             weight2 = psourceobjcubic(obj,zlens)*hubblez
         end if
+        if (use_nl ==.true.) then
         sjclsiiobjsf = ((1.0d0+zlens)**2.0d0)*weight1*weight2/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0
-
+        else
+       sjclsiiobjsf = ((1.0d0+zlens)**2.0d0)*weight1*weight2/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0/(9.0d0/4.0d0*(obj%h0omp/ckms)**4.0d0*(obj%omdmomp+ & 
+                       & obj%ombomp)**2.0d0/(obj%homp)**3.0d0*(1.0d0+zlens)**2.0d0
+       end if !NHmod
     END function sjclsiiobjsf
 
     !LENSING - INTRINSIC ALIGNMENT INTEGRAND (GI) --- wrt scale factor instead
@@ -840,7 +866,11 @@ print *, 'this%thetacfhtini',this%thetacfhtini
         kminsj = 1.0d-5
         kmaxsj = 100.0d0 !kmaxsjhihi
         deltafinal = 0.0d0
-        if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK%PowerAt(kval,zlens)
+        if (use_nl== .true.) then
+         if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK%PowerAt(kval,zlens)
+        else       
+         if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK_WEYL%PowerAt(kval,zlens) !NHmod
+        endif
         growthnorm = obj%gcubicomp%Value(zlens)	!this is D(0)/D(z)
         deltafinal = deltafinal*(-obj%ampiayesomp*5.0d-14*2.77536627d11*(obj%omdmomp+obj%ombomp)*growthnorm*((1.0d0+zlens)/(1.0d0+0.3d0))**obj%redziayesomp)
 	hubblez = Hofz(zlens)
@@ -856,9 +886,16 @@ print *, 'this%thetacfhtini',this%thetacfhtini
             weight2 = weightpart*rombint_obj(obj,weightobjcubic,zlens,obj%mumax2omp,obj%tol_erroromp) !note changed mumax to mumax2
             weight4 = psourceobjcubic(obj,zlens)*hubblez
         end if
-        sjclsgiobjsf = ((1.0d0+zlens)**2.0d0)*(weight1*weight4*(obj%lumarromp(obj%momp(2)))**obj%lumiayesomp + weight2*weight3*(obj%lumarromp(obj%momp(1)))**obj%lumiayesomp)/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0
-
-    END function sjclsgiobjsf
+        if (use_nl== .true.) then !NHmod
+        sjclsgiobjsf = ((1.0d0+zlens)**2.0d0)*(weight1*weight4*(obj%lumarromp(obj%momp(2)))**obj%lumiayesomp +&
+                      & weight2*weight3*(obj%lumarromp(obj%momp(1)))**obj%lumiayesomp)/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0
+        else
+        sjclsgiobjsf = ((1.0d0+zlens)**2.0d0)*(weight1*weight4*(obj%lumarromp(obj%momp(2)))**obj%lumiayesomp +& 
+                      & weight2*weight3*(obj%lumarromp(obj%momp(1)))**obj%lumiayesomp)/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0/(9.0d0/4.0d0*(obj%h0omp/ckms)**4.0d0*(obj%omdmomp+&
+                      & obj%ombomp)**2.0d0/(obj%homp)**3.0d0*(1.0d0+zlens)**2.0d0)
+        endif
+         
+ END function sjclsgiobjsf
 
 
     !lensing weight, cubic spline of source distribution
