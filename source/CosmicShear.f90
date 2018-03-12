@@ -30,7 +30,7 @@
         real(mcp), dimension(9,58999) :: bes0arr,bes4arr,bes2arr
         integer :: size_cov,size_covmask,size_covmaskplanck,sizcov,sizcovpremask,klinesum,set_scenario
         logical :: use_morell, use_rombint
-
+        logical :: use_nl
     contains
 
     procedure :: LogLike => CosmicShear_LnLike
@@ -61,7 +61,7 @@
     this%speed = -1
     this%num_z = 37
     this%size_cov = 180 !nzbins*(nzbins+1)*nangbins --- 4*5*(9+9)
-    if (use_nl == .true.) then
+    if (this%use_nl == .false.) then
      this%needs_weylpower = .true. !NHmod
     endif
     call this%ReadDatasetFile(DataSets%Value(1))
@@ -87,9 +87,10 @@
 
     this%set_scenario = Ini%Read_Int('set_scenario')
     this%use_morell = Ini%Read_Logical('use_morell',.false.)
+    this%use_nl = Ini%Read_Logical('use_nl', .false.) 
     this%use_rombint = Ini%Read_Logical('use_rombint',.false.)
     print *, 'this%use_morell, this%use_rombint', this%use_morell, this%use_rombint
-
+    print *, 'this%use_nl', this%use_nl !NHmod
 !    setscenario = 1
     setscenario = this%set_scenario
     print *, 'setscenario', setscenario
@@ -728,14 +729,14 @@ print *, 'this%thetacfhtini',this%thetacfhtini
         kmaxsj = 100.0d0 !kmaxsjhoho
         deltafinal = 0.0d0
         if(kval < kminsj) obj%kline = obj%kline + 1
-        if (use_nl== .true.) then
+        if (this%use_nl== .true.) then
          if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK%PowerAt(kval,zlens)
         else
          if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK_WEYL%PowerAt(kval,zlens) !NHmod
         endif
         hubblez = Hofz(zlens)
         weightpart = 3.0d0/2.0d0*(obj%omdmomp+obj%ombomp)*(obj%h0omp/ckms)**2.0d0*distz*(1.0d0+zlens)
-        if (use_nl ==.true.) then
+        if (this%use_nl ==.true.) then
          sjclsobjnoweight = 1.0d0/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0
         else
          sjclsobjnoweight = 1.0d0/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0/(9.0d0/4.0d0*(obj%h0omp/ckms)**4.0d0*(obj%omdmomp & 
@@ -789,7 +790,7 @@ print *, 'this%thetacfhtini',this%thetacfhtini
         kmaxsj = 100.0d0 !kmaxsjhihi
         deltafinal = 0.0d0
         if(kval < kminsj) obj%kline = obj%kline + 1
-        if (use_nl== .true.) then
+        if (this%use_nl== .true.) then
          if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK%PowerAt(kval,zlens)
        	else
          if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK_WEYL%PowerAt(kval,zlens) !NHmod
@@ -804,12 +805,13 @@ print *, 'this%thetacfhtini',this%thetacfhtini
             obj%wchooseomp = 2
             weight2 = weightpart*rombint_obj(obj,weightobjcubic,zlens,obj%mumax2omp,obj%tol_erroromp)
         end if
-        if (use_nl ==.true.) then !NHmod
+        if (this%use_nl ==.true.) then !NHmod
         sjclsobjsf = ((1.0d0+zlens)**2.0d0)*weight1*weight2/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0
         else
        sjclsobjsf = ((1.0d0+zlens)**2.0d0)*weight1*weight2/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0/(9.0d0/4.0d0*(obj%h0omp/ckms)**4.0d0*(obj%omdmomp &
                             & +obj%ombomp)**2.0d0/(obj%homp)**3.0d0*(1.0d0+zlens)**2.0d0)
-    END function sjclsobjsf
+       endif   
+ END function sjclsobjsf
 
 
     !INTRINSIC ALIGNMENT INTEGRAND (II) ---- wrt scale factor instead
@@ -827,7 +829,7 @@ print *, 'this%thetacfhtini',this%thetacfhtini
         kminsj = 1.0d-5
         kmaxsj = 100.0d0 !kmaxsjhihi
         deltafinal = 0.0d0
-        if (use_nl== .true.) then
+        if (this%use_nl== .true.) then
          if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK%PowerAt(kval,zlens)
         else
          if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK_WEYL%PowerAt(kval,zlens) !NHmod
@@ -843,11 +845,11 @@ print *, 'this%thetacfhtini',this%thetacfhtini
             obj%wchooseomp = 2
             weight2 = psourceobjcubic(obj,zlens)*hubblez
         end if
-        if (use_nl ==.true.) then
+        if (this%use_nl ==.true.) then
         sjclsiiobjsf = ((1.0d0+zlens)**2.0d0)*weight1*weight2/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0
         else
        sjclsiiobjsf = ((1.0d0+zlens)**2.0d0)*weight1*weight2/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0/(9.0d0/4.0d0*(obj%h0omp/ckms)**4.0d0*(obj%omdmomp+ & 
-                       & obj%ombomp)**2.0d0/(obj%homp)**3.0d0*(1.0d0+zlens)**2.0d0
+                       & obj%ombomp)**2.0d0/(obj%homp)**3.0d0*(1.0d0+zlens)**2.0d0)
        end if !NHmod
     END function sjclsiiobjsf
 
@@ -866,7 +868,7 @@ print *, 'this%thetacfhtini',this%thetacfhtini
         kminsj = 1.0d-5
         kmaxsj = 100.0d0 !kmaxsjhihi
         deltafinal = 0.0d0
-        if (use_nl== .true.) then
+        if (this%use_nl== .true.) then
          if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK%PowerAt(kval,zlens)
         else       
          if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK_WEYL%PowerAt(kval,zlens) !NHmod
@@ -886,7 +888,7 @@ print *, 'this%thetacfhtini',this%thetacfhtini
             weight2 = weightpart*rombint_obj(obj,weightobjcubic,zlens,obj%mumax2omp,obj%tol_erroromp) !note changed mumax to mumax2
             weight4 = psourceobjcubic(obj,zlens)*hubblez
         end if
-        if (use_nl== .true.) then !NHmod
+        if (this%use_nl== .true.) then !NHmod
         sjclsgiobjsf = ((1.0d0+zlens)**2.0d0)*(weight1*weight4*(obj%lumarromp(obj%momp(2)))**obj%lumiayesomp +&
                       & weight2*weight3*(obj%lumarromp(obj%momp(1)))**obj%lumiayesomp)/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0
         else

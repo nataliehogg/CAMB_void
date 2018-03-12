@@ -74,8 +74,6 @@
 
     call Ini%Read('number_of_bins',CosmoSettings%void_n)
 
-    call Ini%Read('use_non_linear', CosmoSettings%use_nl)
-
     call this%SetTheoryParameterNumbers(21+2*CosmoSettings%void_n,last_power_index) !NH increased no. of params
 
     end subroutine TP_Init

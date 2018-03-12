@@ -33,7 +33,6 @@
         logical :: Use_CMB = .false.
         logical :: use_nonlinear = .false.    !JD for WiggleZ MPK
         integer :: void_n
-        logical :: use_nl
         !l_max. Tensors are not computed unless compute_tensors = T in input file
         !Make these multiples of 50, should be 50 more than you need accurately
         integer :: lmax = 0
