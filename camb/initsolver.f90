@@ -157,6 +157,7 @@ subroutine deinterface(CP)
          write(*,*) 'final redshift  =',final_z
          write(*,*) 'rho_c initial   =',rhoc_init
          write(*,*) 'rho_v initial   =',rhov_init
+         write(*,*) 'points for ODE   =',CP%numstepsODE
          write(*,*) '---------------------------------------------'
       end if
 
