@@ -341,8 +341,8 @@
         CMB%smoothfactor = Params(21)
 
         do j =1,CosmoSettings%void_n
-          CMB%void_qV(j) = Params(19+j)
-          CMB%void_redshift(j) =Params(19+CosmoSettings%void_n+j)
+          CMB%void_qV(j) = Params(21+j)
+          CMB%void_redshift(j) =Params(21+CosmoSettings%void_n+j)
         end do
 
 
