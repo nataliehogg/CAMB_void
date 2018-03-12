@@ -115,7 +115,7 @@
         ! integer void_n ! number of bins
         real(mcp) void_qV(n_max)
         real(mcp) void_redshift(n_max)
-        real(mcp) endred, void_model, smoothfactor
+        real(mcp) ODEsteps,endred, void_model, smoothfactor
         real(mcp) zre, zre_delta, nufrac
         real(mcp) h, H0, tau
         real(mcp) w, wa
