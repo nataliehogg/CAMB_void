@@ -21,7 +21,7 @@ real                               :: coupling                    !value of the 
 integer                            :: model                       !choice of the interaction model we want to use
 
 
-logical                            :: debugging = .true.         !if T prints some files to check solver
+logical                            :: debugging = .false.         !if T prints some files to check solver
 
 contains
 

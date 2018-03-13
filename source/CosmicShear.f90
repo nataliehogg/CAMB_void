@@ -62,7 +62,7 @@
     this%num_z = 37
     this%size_cov = 180 !nzbins*(nzbins+1)*nangbins --- 4*5*(9+9)
     if (this%use_nl == .false.) then
-     this%needs_nonlinear_pk = .false.
+    !  this%needs_nonlinear_pk = .false.
      this%needs_weylpower = .true. !NHmod
     endif
     call this%ReadDatasetFile(DataSets%Value(1))
