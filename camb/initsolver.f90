@@ -12,16 +12,16 @@ use ModelParams
 implicit none
 
 !global variable for solver
-real                          :: initial_z                   !starting scale factor for ODE
-real                          :: final_z                     !final scale factor for ODE
-integer, parameter            :: nsteps    = 1000000           !number of integration steps
-real(dl), dimension(nsteps+1) :: z_ode, solmat, solvoid      !8piG/3 * rho_m and rho_v
-real(dl), dimension(nsteps+1) :: ddsolmat, ddsolvoid         !same but derivatives obtained from spline
-real                          :: coupling                    !value of the coupling parameter as taken from CAMB
-integer                       :: model                       !choice of the interaction model we want to use
+real                               :: initial_z                   !starting scale factor for ODE
+real                               :: final_z                     !final scale factor for ODE
+integer                            :: nsteps    = 10000           !number of integration steps
+real(dl), dimension(:),allocatable :: z_ode, solmat, solvoid      !8piG/3 * rho_m and rho_v
+real(dl), dimension(:),allocatable :: ddsolmat, ddsolvoid         !same but derivatives obtained from spline
+real                               :: coupling                    !value of the coupling parameter as taken from CAMB
+integer                            :: model                       !choice of the interaction model we want to use
 
 
-logical                       :: debugging = .false.         !if T prints some files to check solver
+logical                            :: debugging = .true.         !if T prints some files to check solver
 
 contains
 
@@ -76,7 +76,7 @@ integer           :: i
 
 end subroutine getcoupling
 
-subroutine getrhos(a,rho_m,rho_v)
+subroutine getrhos(a,rho_m,rho_v,error)
 !this subroutine gets the output of the differential equation
 !interpolates it at the requested redshift
 !outputs 8piG * rho_i
@@ -86,6 +86,7 @@ real(dl), intent(out)     :: rho_m
 real(dl), intent(out)     :: rho_v
 real(dl)                  :: z
 real(dl), parameter       :: azero = 10**(-8.)
+integer, optional :: error !Zero if OK
 
 if (a.gt.azero) then
    z = -1.+1./a
@@ -101,6 +102,12 @@ else
    rho_v = solvoid(nsteps)
 end if
 
+if ((rho_m.le.0._dl).or.(rho_v.le.0._dl)) then
+   global_error_flag         = 1
+   global_error_message      = 'INITSOLVER: negative densities'
+   if (present(error)) error = global_error_flag
+   return
+end if
 
 end subroutine getrhos
 
@@ -114,14 +121,17 @@ subroutine deinterface(CP)
       real(dl)                :: rhoc_init, rhov_init
       integer                 :: k
       !debugging stuff
-      real(dl)                :: debug_a, debug_c, debug_v
+      real(dl)                :: debug_a, debug_c, debug_v, first_a_debug
       real                    :: debug_q
 
 
       !initializing global ODE solver parameters from CAMB
       initial_z = 0._dl
       final_z   = CP%endred
+      nsteps    = CP%numstepsODE
 
+      if (allocated(z_ode) .eqv. .false.) allocate(z_ode(nsteps+1), solmat(nsteps+1), solvoid(nsteps+1))
+      if (allocated(ddsolmat) .eqv. .false.) allocate(ddsolmat(nsteps+1), ddsolvoid(nsteps+1))
       if (debugging) then
          if ((CP%void_model.eq.1).or.(CP%void_model.eq.2)) then
             write(*,*) 'num_bins=',CP%numvoidbins
@@ -157,12 +167,14 @@ subroutine deinterface(CP)
       if (debugging) write(*,*) 'solution done'
 
       if (debugging) then
+         first_a_debug = 1.e-4
          open(42, file='solutions.dat')
          open(666,file='binned_coupling.dat')
          do k=1,nsteps
-            debug_a = 0.1+k*(1.-0.1)/nsteps
+            debug_a = first_a_debug+k*(1.-first_a_debug)/nsteps
             call getrhos(debug_a,debug_c, debug_v)
-            write(42,*) debug_a, (debug_c*debug_a**3.)/rhoc_init, debug_v/rhov_init
+            write(42,*) debug_a, debug_c/(debug_c+debug_v), debug_v/(debug_c+debug_v)
+            !write(42,*) debug_a, debug_c, debug_v
             call getcoupling(CP,real(-1+1/debug_a),real(debug_v),debug_q)
             write(666,*) -1+1/debug_a, -debug_q/debug_v
          end do

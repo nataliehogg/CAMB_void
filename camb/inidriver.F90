@@ -121,7 +121,7 @@
     !MMmod: reading parameters for interacting void
     P%void_model = Ini_Read_Int('void_model',1)
     P%endred     = Ini_Read_Double('ending_z',10._dl)
-
+    P%numstepsODE= Ini_Read_Int('ODEsteps',10000)
 
     !MMmod: reading specific parameters for different coupling models
     if ((P%void_model.eq.1).or.(P%void_model.eq.2)) then

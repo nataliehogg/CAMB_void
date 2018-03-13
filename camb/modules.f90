@@ -115,8 +115,8 @@
         !Max_l and Max_eta_k are set to the tensor variables if only tensors requested
 
         real(dl)  :: omegab, omegac, omegav, omegan
+        real(dl)  :: baryfeed, barybloat !SJ
         !Omega baryon, CDM, Lambda and massive neutrino
-        real(dl) :: baryfeed, barybloat !SJ
         real(dl)  :: H0,TCMB,yhe,Num_Nu_massless
         integer   :: Num_Nu_massive !sum of Nu_mass_numbers below
         integer   :: Nu_mass_eigenstates  !1 for degenerate masses
@@ -133,6 +133,7 @@
         real(dl)  :: smoothfactor               !smoothing facto for tanh connection in binned functions
         real(dl)  :: zbins(maxbins)             !right margin of redshift bins (first left margin is always zero)
         real(dl)  :: qbins(maxbins)             !value of qV within each redshift bin
+        integer   :: numstepsODE
 
         integer   :: Scalar_initial_condition
         !must be one of the initial_xxx values defined in GaugeInterface
