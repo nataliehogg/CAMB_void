@@ -21,7 +21,7 @@ real                               :: coupling                    !value of the 
 integer                            :: model                       !choice of the interaction model we want to use
 
 
-logical                            :: debugging = .true.         !if T prints some files to check solver
+logical                            :: debugging = .false.         !if T prints some files to check solver
 
 contains
 
@@ -167,6 +167,11 @@ subroutine deinterface(CP)
 
       if (debugging) write(*,*) 'solution done'
 
+      !getting everything ready to interpolate
+      call spline(z_ode,solmat,nsteps,1d30,1d30,ddsolmat)
+      call spline(z_ode,solvoid,nsteps,1d30,1d30,ddsolvoid)
+
+
       if (debugging) then
          first_a_debug = 1.e-4
          open(42, file='solutions.dat')
@@ -183,9 +188,6 @@ subroutine deinterface(CP)
          close(666)
       end if
 
-      !getting everything ready to interpolate
-      call spline(z_ode,solmat,nsteps,1d30,1d30,ddsolmat)
-      call spline(z_ode,solvoid,nsteps,1d30,1d30,ddsolvoid)
 
 end subroutine deinterface
 

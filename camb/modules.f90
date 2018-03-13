@@ -126,6 +126,7 @@
 
         !MMmod: adding parameters for interactive void
         integer   :: void_model                 !selects the specific model to use
+        integer   :: numstepsODE
         real(dl)  :: startred, endred           !redshift limits for differential equation
         real(dl)  :: qV                         !working only with constant for now (effectively 2 bins). TO BE CHANGED
         integer   :: numvoidbins                !number of redshift bins for void coupling
