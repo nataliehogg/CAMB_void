@@ -2,7 +2,7 @@
 ! Dataset: Kilo Degree Survey (KiDS)
 ! Written by Shahab Joudaki (2015), adapted for KiDS (2016)
 
-    module CosmicShear 
+    module CosmicShear
     use CosmologyTypes
     use CAMB, only : ComovingRadialDistance, AngularDiameterDistance, AngularDiameterDistance2, f_K, Hofz  !distance also in Mpc no h units
     use constants
@@ -16,10 +16,10 @@
     use Calculator_Cosmology
     use CosmoTheory
     use ModelParams
-    implicit none  
+    implicit none
 !    private
 
-    TYPE, extends(TCosmoCalcLikelihood) :: CosmicShearLikelihood  
+    TYPE, extends(TCosmoCalcLikelihood) :: CosmicShearLikelihood
         real(mcp), dimension(2,70) :: arraysjorig1,arraysjorig2,arraysjorig3,arraysjorig4
         real(mcp), dimension(2,70,4) :: arraysjfull
         real(mcp), allocatable, dimension(:) :: xipm !7 tom-bins, 7 ang-bins, 2 for +/- gives 28*7*2 = 392
@@ -49,7 +49,7 @@
     class(TSettingIni) :: Ini
     Type(CosmicShearLikelihood), pointer :: this
     Type(TSettingIni) :: DataSets
-    
+
 	if(.not. Ini%Read_Logical('use_CosmicShear',.false.)) return
     call Ini%TagValuesForName('CosmicShear_dataset', DataSets)
     allocate(this)
@@ -77,7 +77,7 @@
     use MatrixUtils
     use settings
     use omp_lib
-    external DGETRF, DGETRI 
+    external DGETRF, DGETRI
     class(CosmicShearLikelihood) this
     class(TSettingIni) :: Ini
     integer, allocatable, dimension(:) :: ipiv
@@ -87,7 +87,7 @@
 
     this%set_scenario = Ini%Read_Int('set_scenario')
     this%use_morell = Ini%Read_Logical('use_morell',.false.)
-    this%use_nl = Ini%Read_Logical('use_nl', .false.) 
+    this%use_nl = Ini%Read_Logical('use_nl', .false.)
     this%use_rombint = Ini%Read_Logical('use_rombint',.false.)
     print *, 'this%use_morell, this%use_rombint', this%use_morell, this%use_rombint
     print *, 'this%use_nl', this%use_nl !NHmod
@@ -95,7 +95,11 @@
     setscenario = this%set_scenario
     print *, 'setscenario', setscenario
 
-    this%size_covmask = 130
+    if (this%use_nl) then
+      this%size_covmask = 130
+    else
+      this%size_covmask = 30
+    end if
     this%size_covmaskplanck = 56
 
     if(setscenario == 0) then !no masking
@@ -149,10 +153,14 @@
 
     !!!Reading in measurements
 !    if(setscenario == 0) then !do not use this option
-!        open(7,file='xipm_filename.dat') 
+!        open(7,file='xipm_filename.dat')
 !    end if
     if(setscenario == 1) then
+      if (this%use_nl) then
         open(7,file='xipmcut_kids_blind1.dat') !USED
+      else
+        open(7,file='xipmcut_kids_blind1_largecut.dat') !USED
+      end if
 !        open(7,file='xipmcut_kids_blind2.dat')
 !        open(7,file='xipmcut_kids_blind3.dat')
     end if
@@ -165,7 +173,11 @@
         open(7,file='xipm_kids4tom_selectsjnocut.dat') !USED
     end if
     if(setscenario == 1) then
+      if (this%use_nl) then
         open(7,file='xipm_kids4tom_selectsj.dat') !USED
+      else
+        open(7,file='xipm_kids4tom_selectsj_largecut.dat') ! SP: USED
+      end if
     end if
     READ (7,*) masktemp
     close(7)
@@ -176,7 +188,11 @@
      !   open(7,file='xipmcov_filename.dat')
     !end if
     if(setscenario == 1) then
+      if (this%use_nl) then
         open(7,file='xipmcutcov_kids_analytic_inc_m_blind1.dat') !USED
+      else
+        open(7,file='xipmcutcov_kids_analytic_inc_m_blind1_largecut.dat') ! SP: USED
+      end if
  !       open(7,file='xipmcutcov_kids_analytic_inc_m_blind2.dat')
  !       open(7,file='xipmcutcov_kids_analytic_inc_m_blind3.dat')
  !       open(7,file='xipmcutcov_kids_regcomb_blind1_nbodysj.dat')
@@ -207,7 +223,7 @@ print *, 'this%thetacfhtini',this%thetacfhtini
             this%bes0arr(iii,jjj) = bessel_j0(this%ellgentestarrini(jjj)*this%thetaradcfhtini(iii))
             this%bes4arr(iii,jjj) = bessel_jn(4,this%ellgentestarrini(jjj)*this%thetaradcfhtini(iii))
             this%bes2arr(iii,jjj) = bessel_jn(2,this%ellgentestarrini(jjj)*this%thetaradcfhtini(iii))
-        end do 
+        end do
     end do
 
     allocate(this%exact_z(this%num_z)) !allocate array for matter power spectrum redshifts
@@ -229,7 +245,7 @@ print *, 'this%thetacfhtini',this%thetacfhtini
     call DGETRF(sizcovish,sizcovish,this%invcovxipm,sizcovish,ipiv,info)         !LU decomposition
     call DGETRI(sizcovish,this%invcovxipm,sizcovish,ipiv,work_inverse,lwork,info)    !inverse from LU decompostion
     ipiv(:) =  0
-    work_inverse(:) = 0    
+    work_inverse(:) = 0
     if (info .ne. 0) stop 'Problem with the matrix inverse calculation'
 
 !    if(setscenario == 0) then
@@ -241,10 +257,10 @@ print *, 'this%thetacfhtini',this%thetacfhtini
         this%invcovxipm = this%invcovxipm !Sellentin-Heavens or Analytic Covariance instead
     end if
 
-    DEALLOCATE(work_inverse) 
-    DEALLOCATE(ipiv) 
-    DEALLOCATE(xipmtemp) 
-    DEALLOCATE(covxipmtemp) 
+    DEALLOCATE(work_inverse)
+    DEALLOCATE(ipiv)
+    DEALLOCATE(xipmtemp)
+    DEALLOCATE(covxipmtemp)
 
     this%klinesum = 0
 
@@ -461,7 +477,7 @@ print *, 'this%thetacfhtini',this%thetacfhtini
             mint = 0
             do m1=1,nzbins
                 do m2=1,nzbins
-                    if(m2 >= m1) then 
+                    if(m2 >= m1) then
                         mint = mint + 1
                         if(mint == bin) then
                             obj%m1omp=m1arr(mint)
@@ -480,7 +496,7 @@ print *, 'this%thetacfhtini',this%thetacfhtini
             obj%mumax1omp = mumax1arr(bin)
             obj%mumax2omp = mumax2arr(bin)
             obj%mumaxlensomp = min(mumax1,mumax2)
-    
+
             !!!##############COMPUTE LENSING POWER SPECTRA (GG, GI, II, Gg) AT DISTINCT L-VALUES. PARALLELIZATION EMPLOYED############
             !$OMP PARALLEL DO FIRSTPRIVATE(ellgen,obj)
                 do ellgen=1,nellbins
@@ -491,7 +507,7 @@ print *, 'this%thetacfhtini',this%thetacfhtini
                 end do
             !$OMP END PARALLEL DO
         end do
-    end if 
+    end if
 
     !Trapezoid Integration for the outer integral!!! for the case use_rombintz=F !!! ------ do not use this option when varying photo-z params, in that case set use_rombintz = T
     if(use_rombintz == .false.) then
@@ -535,7 +551,7 @@ print *, 'this%thetacfhtini',this%thetacfhtini
             mint = 0
             do m1=1,nzbins
                 do m2=1,nzbins
-                    if(m2 >= m1) then 
+                    if(m2 >= m1) then
                         mint = mint + 1
                         if(mint == bin) then
                             obj%m1omp=m1arr(mint)
@@ -704,7 +720,7 @@ print *, 'this%thetacfhtini',this%thetacfhtini
     deallocate(trapzarrgi)
     deallocate(garr)
 
-    contains 
+    contains
 
 
     function sjgrowtha(reda) !integrate to obtain growth function D(0)/D(z)
@@ -722,7 +738,7 @@ print *, 'this%thetacfhtini',this%thetacfhtini
         ckms = 299792.458d0
         distz = ComovingRadialDistance(zlens)
         obj%distlensflatomp = distz
-        distz = f_K(distz) !with curvature        
+        distz = f_K(distz) !with curvature
         kval = (obj%ellarromp(obj%ellgenomp)+1.0d0/2.0d0)/((obj%h0omp/100.0d0)*distz)
 
         kminsj = 1.0d-5
@@ -739,7 +755,7 @@ print *, 'this%thetacfhtini',this%thetacfhtini
         if (this%use_nl ==.true.) then
          sjclsobjnoweight = 1.0d0/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0
         else
-         sjclsobjnoweight = 1.0d0/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0/(9.0d0/4.0d0*(obj%h0omp/ckms)**4.0d0*(obj%omdmomp & 
+         sjclsobjnoweight = 1.0d0/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0/(9.0d0/4.0d0*(obj%h0omp/ckms)**4.0d0*(obj%omdmomp &
                             & +obj%ombomp)**2.0d0/(obj%homp)**3.0d0*(1.0d0+zlens)**2.0d0)
         endif
     END function sjclsobjnoweight
@@ -753,7 +769,7 @@ print *, 'this%thetacfhtini',this%thetacfhtini
         ckms = 299792.458d0
         distz = ComovingRadialDistance(zlens)
         obj%distlensflatomp = distz !assuming flatness
-        distz = f_K(distz) !with curvature        
+        distz = f_K(distz) !with curvature
         weightpart = 3.0d0/2.0d0*(obj%omdmomp+obj%ombomp)*(obj%h0omp/ckms)**2.0d0*distz*(1.0d0+zlens)
         obj%wchooseomp = 1 !doesn't matter here because imposed momp(1) = momp(2)
         sjclsobjonlyweight = weightpart*rombint_obj(obj,weightobjcubic,zlens,obj%mumaxwomp,obj%tol_erroromp) !note changed mumax to mumax1
@@ -784,7 +800,7 @@ print *, 'this%thetacfhtini',this%thetacfhtini
         ckms = 299792.458d0
         distz = ComovingRadialDistance(zlens)
         obj%distlensflatomp = distz !assuming flatness
-        distz = f_K(distz) !with curvature        
+        distz = f_K(distz) !with curvature
         kval = (obj%ellarromp(obj%ellgenomp)+1.0d0/2.0d0)/((obj%h0omp/100.0d0)*distz)
         kminsj = 1.0d-5
         kmaxsj = 100.0d0 !kmaxsjhihi
@@ -810,7 +826,7 @@ print *, 'this%thetacfhtini',this%thetacfhtini
         else
        sjclsobjsf = ((1.0d0+zlens)**2.0d0)*weight1*weight2/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0/(9.0d0/4.0d0*(obj%h0omp/ckms)**4.0d0*(obj%omdmomp &
                             & +obj%ombomp)**2.0d0/(obj%homp)**3.0d0*(1.0d0+zlens)**2.0d0)
-       endif   
+       endif
  END function sjclsobjsf
 
 
@@ -824,7 +840,7 @@ print *, 'this%thetacfhtini',this%thetacfhtini
         ckms = 299792.458d0
         distz = ComovingRadialDistance(zlens)
         obj%distlensflatomp = distz !assuming flatness ---- need to fix this
-        distz = f_K(distz) !with curvature        
+        distz = f_K(distz) !with curvature
         kval = (obj%ellarromp(obj%ellgenomp)+1.0d0/2.0d0)/((obj%h0omp/100.0d0)*distz)
         kminsj = 1.0d-5
         kmaxsj = 100.0d0 !kmaxsjhihi
@@ -833,7 +849,7 @@ print *, 'this%thetacfhtini',this%thetacfhtini
          if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK%PowerAt(kval,zlens)
         else
          if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK_WEYL%PowerAt(kval,zlens) !NHmod
-        endif 
+        endif
         growthnorm = obj%gcubicomp%Value(zlens)
         deltafinal = deltafinal*((obj%lumarromp(obj%momp(1))*obj%lumarromp(obj%momp(2)))**obj%lumiayesomp)*(-obj%ampiayesomp*5.0d-14*2.77536627d11*(obj%omdmomp+obj%ombomp)*growthnorm*((1.0d0+zlens)/(1.0d0+0.3d0))**obj%redziayesomp)**2.0d0
 	hubblez = Hofz(zlens)
@@ -848,7 +864,7 @@ print *, 'this%thetacfhtini',this%thetacfhtini
         if (this%use_nl ==.true.) then
         sjclsiiobjsf = ((1.0d0+zlens)**2.0d0)*weight1*weight2/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0
         else
-       sjclsiiobjsf = ((1.0d0+zlens)**2.0d0)*weight1*weight2/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0/(9.0d0/4.0d0*(obj%h0omp/ckms)**4.0d0*(obj%omdmomp+ & 
+       sjclsiiobjsf = ((1.0d0+zlens)**2.0d0)*weight1*weight2/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0/(9.0d0/4.0d0*(obj%h0omp/ckms)**4.0d0*(obj%omdmomp+ &
                        & obj%ombomp)**2.0d0/(obj%homp)**3.0d0*(1.0d0+zlens)**2.0d0)
        end if !NHmod
     END function sjclsiiobjsf
@@ -863,14 +879,14 @@ print *, 'this%thetacfhtini',this%thetacfhtini
         ckms = 299792.458d0
         distz = ComovingRadialDistance(zlens)
         obj%distlensflatomp = distz !assuming flatness
-        distz = f_K(distz) !with curvature        
+        distz = f_K(distz) !with curvature
         kval = (obj%ellarromp(obj%ellgenomp)+1.0d0/2.0d0)/((obj%h0omp/100.0d0)*distz)
         kminsj = 1.0d-5
         kmaxsj = 100.0d0 !kmaxsjhihi
         deltafinal = 0.0d0
         if (this%use_nl== .true.) then
          if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK%PowerAt(kval,zlens)
-        else       
+        else
          if((kval >= kminsj) .and. (kval <= kmaxsj)) deltafinal = obj%theoryomp%NL_MPK_WEYL%PowerAt(kval,zlens) !NHmod
         endif
         growthnorm = obj%gcubicomp%Value(zlens)	!this is D(0)/D(z)
@@ -892,11 +908,11 @@ print *, 'this%thetacfhtini',this%thetacfhtini
         sjclsgiobjsf = ((1.0d0+zlens)**2.0d0)*(weight1*weight4*(obj%lumarromp(obj%momp(2)))**obj%lumiayesomp +&
                       & weight2*weight3*(obj%lumarromp(obj%momp(1)))**obj%lumiayesomp)/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0
         else
-        sjclsgiobjsf = ((1.0d0+zlens)**2.0d0)*(weight1*weight4*(obj%lumarromp(obj%momp(2)))**obj%lumiayesomp +& 
+        sjclsgiobjsf = ((1.0d0+zlens)**2.0d0)*(weight1*weight4*(obj%lumarromp(obj%momp(2)))**obj%lumiayesomp +&
                       & weight2*weight3*(obj%lumarromp(obj%momp(1)))**obj%lumiayesomp)/(distz**2.0d0)/hubblez*deltafinal/(obj%homp)**3.0d0/(9.0d0/4.0d0*(obj%h0omp/ckms)**4.0d0*(obj%omdmomp+&
                       & obj%ombomp)**2.0d0/(obj%homp)**3.0d0*(1.0d0+zlens)**2.0d0)
         endif
-         
+
  END function sjclsgiobjsf
 
 
