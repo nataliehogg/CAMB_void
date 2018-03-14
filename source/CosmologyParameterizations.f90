@@ -74,7 +74,7 @@
 
     call Ini%Read('number_of_bins',CosmoSettings%void_n)
 
-    call this%SetTheoryParameterNumbers(21+2*CosmoSettings%void_n,last_power_index) !NH increased no. of params
+    call this%SetTheoryParameterNumbers(22+2*CosmoSettings%void_n,last_power_index) !NH increased no. of params
 
     end subroutine TP_Init
 
@@ -337,12 +337,13 @@
         CMB%baryfeed = Params(17) !SJ
         CMB%barybloat = Params(18) !SJ
         CMB%endred = Params(19)
-        CMB%void_model =Params(20)
-        CMB%smoothfactor = Params(21)
+        CMB%ODEsteps = Params(20)
+        CMB%void_model =Params(21)
+        CMB%smoothfactor = Params(22)
 
         do j =1,CosmoSettings%void_n
-          CMB%void_qV(j) = Params(21+j)
-          CMB%void_redshift(j) =Params(21+CosmoSettings%void_n+j)
+          CMB%void_qV(j) = Params(22+j)
+          CMB%void_redshift(j) =Params(22+CosmoSettings%void_n+j)
         end do
 
 

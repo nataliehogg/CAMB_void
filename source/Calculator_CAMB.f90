@@ -101,6 +101,7 @@
 
   P%void_model = CMB%void_model
   P%endred = CMB%endred
+  P%numstepsODE = CMB%ODEsteps
   if (P%void_model.eq.2) P%smoothfactor= CMB%smoothfactor
 
     P%H0 = CMB%H0
