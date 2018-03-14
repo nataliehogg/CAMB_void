@@ -17,6 +17,7 @@ fdm           \epsilon_0 f_d    #CosmoRec dark matter annihilation parameter, 09
 baryfeed      \log B #meadfit baryon feedback param
 barybloat     \eta_0 #meadfit baryon bloating param
 endred	      z_{end}
+ODEsteps      n_{\rm ODE}
 voidmodel     m
 smoothfactor  s
 void_qV0      q_0
