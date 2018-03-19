@@ -2003,7 +2003,7 @@
     !non-flat vars
     real(dl) cothxor !1/tau in flat case
     ! real(dl)::void_qV
-    real    :: voidQ
+    real(dl)    :: voidQ
 
 
     k=EV%k_buf
@@ -2170,7 +2170,7 @@
     !use Eqs.(13,15)
 
     !MMmod: getting coupling from the solver
-    call getcoupling(CP,real(-1+1/a),real(grhov_t/a2),voidQ)
+    call getcoupling(CP,-1+1/a,real(grhov_t/a2),voidQ)
 
     clxcdot=-k*z +voidQ*adotoa/(grhoc_t/a2)*clxc  !SPmod
     ayprime(3)=clxcdot

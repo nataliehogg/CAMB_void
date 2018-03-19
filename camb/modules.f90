@@ -133,6 +133,7 @@
         real(dl)  :: smoothfactor               !smoothing facto for tanh connection in binned functions
         real(dl)  :: zbins(maxbins)             !right margin of redshift bins (first left margin is always zero)
         real(dl)  :: qbins(maxbins)             !value of qV within each redshift bin
+        real(dl)  :: corrlen                    !correlation lenght for gaussian process reconstruction
 
         integer   :: Scalar_initial_condition
         !must be one of the initial_xxx values defined in GaugeInterface

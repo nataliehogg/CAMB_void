@@ -1,7 +1,7 @@
 !#############################################################
 !#This module computes the main equations for the interactive#
 !#void model.                                                #
-!#Current version updated on 21/02/2018                      #
+!#Current version updated on 15/03/2018                      #
 !#############################################################
 
 module initsolver
@@ -17,24 +17,26 @@ real                               :: final_z                     !final scale f
 integer                            :: nsteps    = 10000           !number of integration steps
 real(dl), dimension(:),allocatable :: z_ode, solmat, solvoid      !8piG/3 * rho_m and rho_v
 real(dl), dimension(:),allocatable :: ddsolmat, ddsolvoid         !same but derivatives obtained from spline
+real(dl), dimension(:),allocatable :: GP_z, GP_q, dd_GP_q         !output arrays of GP reconstruction
 real                               :: coupling                    !value of the coupling parameter as taken from CAMB
 integer                            :: model                       !choice of the interaction model we want to use
+integer, parameter                 :: theta_void=1, smooth_void=2 !possible options for q(z) binned reconstruction
+integer, parameter                 :: GP_void=3, baseline_void=4  !possible options for q(z) gaussian process reconstruction
 
-
-logical                            :: debugging = .false.         !if T prints some files to check solver
+logical                            :: debugging = .true.         !if T prints some files to check solver
 
 contains
 
 subroutine getcoupling(CP,z,rhov,Q)
 !this subroutine just returns Q at any redshift
 Type(CAMBparams) CP
-real, intent(in)  :: z,rhov
-real, intent(out) :: Q
-real              :: multitheta !double theta function for binning
-integer           :: i
+real(dl), intent(in)  :: z
+real, intent(in)      :: rhov
+real(dl), intent(out) :: Q
+real                  :: multitheta !double theta function for binning
+integer               :: i
 
-
-      if (CP%void_model.eq.1) then
+      if (CP%void_model.eq.theta_void) then
          !Working with binned qV. No smoothing.
 
          if (z.gt.CP%zbins(CP%numvoidbins)) then
@@ -48,7 +50,7 @@ integer           :: i
             Q = -Q*rhov
          end if
 
-      else if (CP%void_model.eq.2) then
+      else if (CP%void_model.eq.smooth_void) then
          !Working with binned qV smoothed with tanh.
          !Binned function used is based on Eq. 6 of 1703.01271
 
@@ -67,6 +69,14 @@ integer           :: i
             Q = -Q*rhov
          end if
 
+      else if ((CP%void_model.eq.GP_void).or.(CP%void_model.eq.baseline_void)) then
+         !interpolates what is obtained by GP in deinterface
+         if (z.lt.CP%endred) then
+            call extrasplint(GP_z,GP_q,dd_GP_q,nsteps,z,Q)
+         else
+            Q=0._dl
+         end if
+         Q = -Q*rhov
       else
          write(*,*) 'wait for it'
       end if
@@ -119,10 +129,22 @@ subroutine deinterface(CP)
       real, dimension(0:n)    :: x                              !dependent variables: rho_m, rho_v
       real                    :: h                              !step size
       real(dl)                :: rhoc_init, rhov_init
-      integer                 :: k
+      integer                 :: i,j,k
       !debugging stuff
       real(dl)                :: debug_a, debug_c, debug_v, first_a_debug
-      real                    :: debug_q
+      real(dl)                :: debug_q
+
+      !Interface with GP python script
+      character(LEN= 1000)                :: redbin
+      character(LEN= 1000)                :: qbin
+      character(LEN= 1000)                :: steps_de
+      character(LEN= 1000)                :: z_ini
+      character(LEN= 1000)                :: z_end
+      character(LEN= 1000)                :: lencorr
+      character(LEN= 20)                  :: feature_file="tmp_GPqz_000000.dat"
+      character(LEN=10000)                :: command_plus_arguments
+      real(dl), dimension(CP%numvoidbins) :: gpreds
+      integer :: status
 
 
       !initializing global ODE solver parameters from CAMB
@@ -130,10 +152,15 @@ subroutine deinterface(CP)
       final_z   = CP%endred
       nsteps    = CP%numstepsODE
 
+      !allocating arrays
       if (allocated(z_ode) .eqv. .false.) allocate(z_ode(nsteps+1), solmat(nsteps+1), solvoid(nsteps+1))
       if (allocated(ddsolmat) .eqv. .false.) allocate(ddsolmat(nsteps+1), ddsolvoid(nsteps+1))
+      if (allocated(GP_z) .eqv. .false.) allocate(GP_z(nsteps+1))
+      if (allocated(GP_q) .eqv. .false.) allocate(GP_q(nsteps+1))
+      if (allocated(dd_GP_q) .eqv. .false.) allocate(dd_GP_q(nsteps+1))
+
       if (debugging) then
-         if ((CP%void_model.eq.1).or.(CP%void_model.eq.2)) then
+         if ((CP%void_model.eq.theta_void).or.(CP%void_model.eq.smooth_void)) then
             write(*,*) 'num_bins=',CP%numvoidbins
             do k=1,CP%numvoidbins
                write(*,*) 'redshift',k,'=',CP%zbins(k)
@@ -147,6 +174,73 @@ subroutine deinterface(CP)
       rhov_init = 3*(1000*CP%H0/c)**2.*CP%omegav               !8 pi G * rho_V^0
       x = (/rhoc_init, rhov_init/)                             !initial conditions
       h = (final_z - initial_z)/nsteps                         !step size for runge-kutta
+
+
+      !Gaussian process interface
+      if ((CP%void_model.eq.GP_void).or.(CP%void_model.eq.baseline_void)) then
+
+         !Setting GP redshift to median redshift of each bin
+         gpreds(1) = CP%zbins(1)/2
+         do i=2,CP%numvoidbins
+            gpreds(i) = (CP%zbins(i)+CP%zbins(i-1))/2.
+         end do
+
+         !Creating command line 
+  
+         !Generate tmp file name based on PID
+         write (feature_file(11:16), "(Z6.6)"), getpid()
+         !1. Prepare command and launch it!
+         write(z_ini, "(E15.7)"      ) initial_z
+         write(z_end, "(E15.7)"      ) final_z
+         write(steps_de, "(I10)"     ) nsteps
+         write(redbin, "(10E15.7)"   ) (gpreds(k),k=1,CP%numvoidbins)
+         write(qbin, "(10f15.7)"     ) (CP%qbins(k),k=1,CP%numvoidbins) !python parser struggles with scientific notation negatives: using floats here
+         write(lencorr, "(10E15.7)"  ) CP%corrlen
+
+      
+         if (CP%void_model.eq.GP_void) then
+            if (debugging) write(*,*) 'WORKING WITH GP'
+            !here needs the call to script with no baseline
+            write(0,*) 'GP with no baseline not implemented yet'
+            stop
+
+
+         else if (CP%void_model.eq.baseline_void) then
+
+            if (debugging) write(*,*) 'WORKING WITH GP (with baseline)'
+
+            command_plus_arguments = "python GP.py --inired "//trim(adjustl(z_ini))//" --endred "//trim(adjustl(z_end))//" --ODEsteps "//trim(adjustl(steps_de))// & 
+            & " --redshifts "//trim(adjustl(redbin))// " --couplings "//trim(adjustl(qbin))// " --l "//trim(adjustl(lencorr))//" --outfile " // feature_file
+
+            !calling script!!!
+            if (debugging) then 
+               write(*,*) 'Calling Gaussian process script with command line:'
+               write(*,*) trim(adjustl(command_plus_arguments))
+            end if
+            status = system(trim(adjustl(command_plus_arguments)))
+            if (status/=0) then
+               print *, "Failure in GP reconstruction of q(z) -- see above."
+               call abort
+            end if
+
+         end if
+
+         !Reading temporary file generated by GP script--------------
+         open(unit=17, file=feature_file, action='read')
+         do i=1,nsteps
+            read(17, "(E15.8, 1X, E15.8)", iostat=status) GP_z(i), GP_q(i)
+            if (status>0) then
+               print *, "Error reading the tmp q(z) file."
+               call abort
+            end if
+         end do
+         close(17, status='delete')
+         !-----------------------------------------------------------
+
+         !Setting interpolation for GP arrays------------------------
+         call spline(GP_z,GP_q,nsteps,1d30,1d30,dd_GP_q)
+         !-----------------------------------------------------------
+      end if
 
       if (debugging) then
          write(*,*) '---------------------------------------------'
@@ -174,14 +268,25 @@ subroutine deinterface(CP)
 
       if (debugging) then
          first_a_debug = 1.e-4
-         open(42, file='solutions.dat')
-         open(666,file='binned_coupling.dat')
+         if (CP%void_model.eq.theta_void) then
+            open(42, file='solutions_thetabin.dat')
+            open(666,file='binned_coupling_thetabin.dat')
+         else if (CP%void_model.eq.smooth_void) then
+            open(42, file='solutions_smoothbin.dat')
+            open(666,file='binned_coupling_smoothbin.dat')
+         else if (CP%void_model.eq.GP_void) then
+            open(42, file='solutions_GP.dat')
+            open(666,file='binned_coupling_GP.dat')
+         else if (CP%void_model.eq.baseline_void) then
+            open(42, file='solutions_GPbaseline.dat')
+            open(666,file='binned_coupling_GPbaseline.dat')
+         end if
          do k=1,nsteps
             debug_a = first_a_debug+k*(1.-first_a_debug)/nsteps
             call getrhos(debug_a,debug_c, debug_v)
             write(42,*) debug_a, debug_c/(debug_c+debug_v), debug_v/(debug_c+debug_v)
             !write(42,*) debug_a, debug_c, debug_v
-            call getcoupling(CP,real(-1+1/debug_a),real(debug_v),debug_q)
+            call getcoupling(CP,-1+1/debug_a,real(debug_v),debug_q)
             write(666,*) -1+1/debug_a, -debug_q/debug_v
          end do
          close(42)
@@ -215,8 +320,8 @@ subroutine xpsys(CP,n,k,h,x,f)
       integer n,k
       real :: h      !stepsize
       real :: Hubble !Hubble parameter
-      real :: Q      !interaction term
-      real :: redshift
+      real(dl) :: Q      !interaction term
+      real(dl) :: redshift
 
       !Gets redshift for this step and the coupling
       redshift = initial_z + k*h
