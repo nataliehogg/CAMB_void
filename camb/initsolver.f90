@@ -145,6 +145,8 @@ subroutine deinterface(CP)
       character(LEN=10000)                :: command_plus_arguments
       real(dl), dimension(CP%numvoidbins) :: gpreds
       integer :: status
+      integer :: getpid
+      integer :: system
 
 
       !initializing global ODE solver parameters from CAMB
@@ -188,6 +190,7 @@ subroutine deinterface(CP)
          !Creating command line 
   
          !Generate tmp file name based on PID
+!         ipid = getpid()
          write (feature_file(11:16), "(Z6.6)"), getpid()
          !1. Prepare command and launch it!
          write(z_ini, "(E15.7)"      ) initial_z
