@@ -2356,8 +2356,8 @@
     integer j_PK
 
 ! SP:
-call Transfer_Get_sigma8(MTrans)
-write(22,*) MTrans%sigma_8
+!call Transfer_Get_sigma8(MTrans)
+!write(22,*) MTrans%sigma_8
 
     do in=1, CP%InitPower%nn
         if (CP%InitPower%nn>1)  write(*,*) 'Power spectrum : ', in
