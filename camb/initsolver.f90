@@ -23,7 +23,7 @@ integer                            :: model                       !choice of the
 integer, parameter                 :: theta_void=1, smooth_void=2 !possible options for q(z) binned reconstruction
 integer, parameter                 :: GP_void=3, baseline_void=4  !possible options for q(z) gaussian process reconstruction
 
-logical                            :: debugging = .true.         !if T prints some files to check solver
+logical                            :: debugging = .false.         !if T prints some files to check solver
 
 contains
 
@@ -174,21 +174,10 @@ subroutine deinterface(CP)
       !setting initial conditions for rho_c and rho_v at z=0
       rhoc_init = 3*(1000*CP%H0/c)**2.*CP%omegac               !8 pi G * rho_c^0
       rhov_init = 3*(1000*CP%H0/c)**2.*CP%omegav               !8 pi G * rho_V^0
-      !MMmod: test to avoid negative initial conditions (spoils SetForH in cosmomc)
-      if ((rhoc_init.lt.0._dl).or.(rhov_init.lt.0._dl)) then
-         rhoc_init = 3*(1000*CP%H0/c)**2.
-         rhov_init = 0._dl
-      end if
       x = (/rhoc_init, rhov_init/)                             !initial conditions
       h = (final_z - initial_z)/nsteps                         !step size for runge-kutta
 
 
-write(*,*) 'SOME TESTS'
-write(*,*) 'ini rhos=',rhoc_init, rhov_init
-           do k=1,CP%numvoidbins
-               write(*,*) 'redshift',k,'=',CP%zbins(k)
-               write(*,*) 'coupling',k,'=',CP%qbins(k)
-            end do
 
       !Gaussian process interface
       if ((CP%void_model.eq.GP_void).or.(CP%void_model.eq.baseline_void)) then
@@ -202,7 +191,6 @@ write(*,*) 'ini rhos=',rhoc_init, rhov_init
          !Creating command line 
   
          !Generate tmp file name based on PID
-!         ipid = getpid()
          write (feature_file(11:16), "(Z6.6)"), getpid()
          !1. Prepare command and launch it!
          write(z_ini, "(E15.7)"      ) initial_z
@@ -296,7 +284,6 @@ write(*,*) 'ini rhos=',rhoc_init, rhov_init
             open(42, file='solutions_GPbaseline.dat')
             open(666,file='binned_coupling_GPbaseline.dat')
          end if
-         open(777,file='hubble.dat')
          do k=1,nsteps
             debug_a = first_a_debug+k*(1.-first_a_debug)/nsteps
             call getrhos(debug_a,debug_c, debug_v)
@@ -304,11 +291,9 @@ write(*,*) 'ini rhos=',rhoc_init, rhov_init
             !write(42,*) debug_a, debug_c, debug_v
             call getcoupling(CP,-1+1/debug_a,real(debug_v),debug_q)
             write(666,*) -1+1/debug_a, -debug_q/debug_v
-            write(777,*) -1+1/debug_a, Hofz(-1+1/debug_a)
          end do
          close(42)
          close(666)
-         close(777)
       end if
 
       if (debugging) then
@@ -320,7 +305,6 @@ write(*,*) 'ini rhos=',rhoc_init, rhov_init
         write(*,'("Om_m (1-Om_K-Om_L)   = ",f9.6)') 1-CP%omegak-CP%omegav
         write(*,'("100 theta (CosmoMC)  = ",f9.6)') 100*CosmomcTheta()
       end if
-if (debugging) stop
 
 end subroutine deinterface
 
