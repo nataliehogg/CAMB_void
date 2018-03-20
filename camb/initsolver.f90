@@ -145,8 +145,8 @@ subroutine deinterface(CP)
       character(LEN=10000)                :: command_plus_arguments
       real(dl), dimension(CP%numvoidbins) :: gpreds
       integer :: status
-!      integer :: getpid
-!      integer :: system
+      integer :: getpid
+      integer :: system
 
 
       !initializing global ODE solver parameters from CAMB
