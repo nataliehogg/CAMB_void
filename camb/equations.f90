@@ -109,7 +109,6 @@
 
     !MMmod: getting densities from solver
         call getrhos(a,grhoc_t,grhov_t)
-write(876,*) a,grhoc_t,grhov_t
         if (global_error_flag.ne.0) return
         grhoa2 = grhoa2 + grhov_t*a2*a2 + grhoc_t*a2*a2
     end if
