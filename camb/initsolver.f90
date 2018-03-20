@@ -23,7 +23,7 @@ integer                            :: model                       !choice of the
 integer, parameter                 :: theta_void=1, smooth_void=2 !possible options for q(z) binned reconstruction
 integer, parameter                 :: GP_void=3, baseline_void=4  !possible options for q(z) gaussian process reconstruction
 
-logical                            :: debugging = .false.         !if T prints some files to check solver
+logical                            :: debugging = .true.         !if T prints some files to check solver
 
 contains
 
@@ -145,8 +145,8 @@ subroutine deinterface(CP)
       character(LEN=10000)                :: command_plus_arguments
       real(dl), dimension(CP%numvoidbins) :: gpreds
       integer :: status
-      integer :: getpid
-      integer :: system
+!      integer :: getpid
+!      integer :: system
 
 
       !initializing global ODE solver parameters from CAMB
@@ -182,6 +182,13 @@ subroutine deinterface(CP)
       x = (/rhoc_init, rhov_init/)                             !initial conditions
       h = (final_z - initial_z)/nsteps                         !step size for runge-kutta
 
+
+write(*,*) 'SOME TESTS'
+write(*,*) 'ini rhos=',rhoc_init, rhov_init
+           do k=1,CP%numvoidbins
+               write(*,*) 'redshift',k,'=',CP%zbins(k)
+               write(*,*) 'coupling',k,'=',CP%qbins(k)
+            end do
 
       !Gaussian process interface
       if ((CP%void_model.eq.GP_void).or.(CP%void_model.eq.baseline_void)) then
@@ -289,6 +296,7 @@ subroutine deinterface(CP)
             open(42, file='solutions_GPbaseline.dat')
             open(666,file='binned_coupling_GPbaseline.dat')
          end if
+         open(777,file='hubble.dat')
          do k=1,nsteps
             debug_a = first_a_debug+k*(1.-first_a_debug)/nsteps
             call getrhos(debug_a,debug_c, debug_v)
@@ -296,11 +304,23 @@ subroutine deinterface(CP)
             !write(42,*) debug_a, debug_c, debug_v
             call getcoupling(CP,-1+1/debug_a,real(debug_v),debug_q)
             write(666,*) -1+1/debug_a, -debug_q/debug_v
+            write(777,*) -1+1/debug_a, Hofz(-1+1/debug_a)
          end do
          close(42)
          close(666)
+         close(777)
       end if
 
+      if (debugging) then
+        write(*,'("Om_b h^2             = ",f9.6)') CP%omegab*(CP%H0/100)**2
+        write(*,'("Om_c h^2             = ",f9.6)') CP%omegac*(CP%H0/100)**2
+        write(*,'("Om_nu h^2            = ",f9.6)') CP%omegan*(CP%H0/100)**2
+        write(*,'("Om_Lambda            = ",f9.6)') CP%omegav
+        write(*,'("Om_K                 = ",f9.6)') CP%omegak
+        write(*,'("Om_m (1-Om_K-Om_L)   = ",f9.6)') 1-CP%omegak-CP%omegav
+        write(*,'("100 theta (CosmoMC)  = ",f9.6)') 100*CosmomcTheta()
+      end if
+if (debugging) stop
 
 end subroutine deinterface
 
