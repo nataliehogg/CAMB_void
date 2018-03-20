@@ -18,6 +18,7 @@ endred	      z_{end}
 ODEsteps      n_{\rm ODE}
 voidmodel     m
 smoothfactor  s
+corrlen       l
 void_qV0      q_0
 void_qV1      q_1
 void_qV2      q_2

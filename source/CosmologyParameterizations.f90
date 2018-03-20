@@ -74,7 +74,7 @@
 
     call Ini%Read('number_of_bins',CosmoSettings%void_n)
 
-    call this%SetTheoryParameterNumbers(20+2*CosmoSettings%void_n,last_power_index) !NH increased no. of params
+    call this%SetTheoryParameterNumbers(21+2*CosmoSettings%void_n,last_power_index) !NH increased no. of params MMmod: +1 for corrlen
 
     end subroutine TP_Init
 
@@ -132,18 +132,26 @@
             call this%TCosmologyParameterization%ParamArrayToTheoryParams(Params, CMB)
 
             error = 0   !JD to prevent stops when using bbn_consistency or m_sterile
+            !MMmod: inverting max with min to avoid failure at first point
             DA = Params(3)/100
-            try_b = this%H0_min
+!            try_b = this%H0_min
+            try_b = this%H0_max
             call SetForH(Params,CMB,try_b, .true.,error)  !JD for bbn related errors
             if(error/=0)then
                 cmb%H0=0
                 return
             end if
             D_b = CosmoCalc%CMBToTheta(CMB)
-            try_t = this%H0_max
+write(*,*) 'D_b=',D_b,DA       
+            !MMmod: inverting max with min to avoid failure at first point
+!            try_t = this%H0_max
+            try_t = this%H0_min
             call SetForH(Params,CMB,try_t, .false.)
             D_t = CosmoCalc%CMBToTheta(CMB)
-            if (DA < D_b .or. DA > D_t) then
+write(*,*) 'D_t=',D_t,DA       
+            !MMmod: inverting max with min to avoid failure at first point
+!            if (DA < D_b .or. DA > D_t) then
+            if (DA < D_t .or. DA > D_b) then
                 if (Feedback>1) write(*,*) instance, 'Out of range finding H0: ', real(Params(3))
                 cmb%H0=0 !Reject it
             else
@@ -338,10 +346,11 @@
         CMB%ODEsteps = Params(18)
         CMB%void_model =Params(19)
         CMB%smoothfactor = Params(20)
+        CMB%corrlen = Params(21)
 
         do j =1,CosmoSettings%void_n
-          CMB%void_qV(j) = Params(20+j)
-          CMB%void_redshift(j) =Params(20+CosmoSettings%void_n+j)
+          CMB%void_qV(j) = Params(21+j)
+          CMB%void_redshift(j) =Params(21+CosmoSettings%void_n+j)
         end do
 
 

@@ -23,7 +23,7 @@ integer                            :: model                       !choice of the
 integer, parameter                 :: theta_void=1, smooth_void=2 !possible options for q(z) binned reconstruction
 integer, parameter                 :: GP_void=3, baseline_void=4  !possible options for q(z) gaussian process reconstruction
 
-logical                            :: debugging = .true.         !if T prints some files to check solver
+logical                            :: debugging = .false.         !if T prints some files to check solver
 
 contains
 
@@ -174,6 +174,11 @@ subroutine deinterface(CP)
       !setting initial conditions for rho_c and rho_v at z=0
       rhoc_init = 3*(1000*CP%H0/c)**2.*CP%omegac               !8 pi G * rho_c^0
       rhov_init = 3*(1000*CP%H0/c)**2.*CP%omegav               !8 pi G * rho_V^0
+      !MMmod: test to avoid negative initial conditions (spoils SetForH in cosmomc)
+      if ((rhoc_init.lt.0._dl).or.(rhov_init.lt.0._dl)) then
+         rhoc_init = 3*(1000*CP%H0/c)**2.
+         rhov_init = 0._dl
+      end if
       x = (/rhoc_init, rhov_init/)                             !initial conditions
       h = (final_z - initial_z)/nsteps                         !step size for runge-kutta
 
@@ -212,7 +217,7 @@ subroutine deinterface(CP)
 
             if (debugging) write(*,*) 'WORKING WITH GP (with baseline)'
 
-            command_plus_arguments = "python GP.py --inired "//trim(adjustl(z_ini))//" --endred "//trim(adjustl(z_end))//" --ODEsteps "//trim(adjustl(steps_de))// & 
+            command_plus_arguments = "python camb/GP.py --inired "//trim(adjustl(z_ini))//" --endred "//trim(adjustl(z_end))//" --ODEsteps "//trim(adjustl(steps_de))// & 
             & " --redshifts "//trim(adjustl(redbin))// " --couplings "//trim(adjustl(qbin))// " --l "//trim(adjustl(lencorr))//" --outfile " // feature_file
 
             !calling script!!!
