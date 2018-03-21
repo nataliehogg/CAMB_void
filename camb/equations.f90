@@ -73,8 +73,11 @@
     !This is only called once per model, and is a good point to do any extra initialization.
     !It is called before first call to dtauda, but after
     !massive neutrinos are initialized and after GetOmegak
-
-    call deinterface(CP)
+    integer error
+    write(*,*) 'pre error=',error
+    call deinterface(CP,error)
+    write(*,*) 'post error=',error
+!    if (error.ne.0) call MpiStop()
 
     end  subroutine init_background
 

@@ -86,7 +86,7 @@ integer               :: i
 
 end subroutine getcoupling
 
-subroutine getrhos(a,rho_m,rho_v,error)
+subroutine getrhos(a,rho_m,rho_v)
 !this subroutine gets the output of the differential equation
 !interpolates it at the requested redshift
 !outputs 8piG * rho_i
@@ -96,7 +96,6 @@ real(dl), intent(out)     :: rho_m
 real(dl), intent(out)     :: rho_v
 real(dl)                  :: z
 real(dl), parameter       :: azero = 10**(-8.)
-integer, optional :: error !Zero if OK
 
 if (a.gt.azero) then
    z = -1.+1./a
@@ -112,18 +111,13 @@ else
    rho_v = solvoid(nsteps)
 end if
 
-if ((rho_m.le.0._dl).or.(rho_v.le.0._dl)) then
-   global_error_flag         = 1
-   global_error_message      = 'INITSOLVER: negative densities'
-   if (present(error)) error = global_error_flag
-   return
-end if
+!write(321,*) z, rho_m/(rho_m+rho_v), rho_v/(rho_m+rho_v)
 
 end subroutine getrhos
 
 
 
-subroutine deinterface(CP)
+subroutine deinterface(CP,error)
       Type(CAMBparams) CP
       integer, parameter      :: n = 1
       real, dimension(0:n)    :: x                              !dependent variables: rho_m, rho_v
@@ -147,12 +141,14 @@ subroutine deinterface(CP)
       integer :: status
       integer :: getpid
       integer :: system
+      integer, optional :: error
 
 
       !initializing global ODE solver parameters from CAMB
       initial_z = 0._dl
       final_z   = CP%endred
       nsteps    = CP%numstepsODE
+      error     = 0
 
       !allocating arrays
       if (allocated(z_ode) .eqv. .false.) allocate(z_ode(nsteps+1), solmat(nsteps+1), solvoid(nsteps+1))
@@ -245,6 +241,7 @@ subroutine deinterface(CP)
          !-----------------------------------------------------------
       end if
 
+
       if (debugging) then
          write(*,*) '---------------------------------------------'
          write(*,*) 'STARTING DIFFERENTIAL EQUATION FOR COUPLED DE'
@@ -264,13 +261,28 @@ subroutine deinterface(CP)
 
       if (debugging) write(*,*) 'solution done'
 
+!do i=1,CP%numstepsODE
+!   write(123,*) z_ode(i),solmat(i)/(solmat(i)+solvoid(i)),solvoid(i)/(solmat(i)+solvoid(i))
+!end do
+
+      !TEST FOR NEGATIVE DENSITITES----------------------------------
+write(*,*) 'doing overall sign test'
+      if (any(solmat.le.0._dl).or.any(solvoid.le.0._dl)) then
+         global_error_flag         = 1
+         global_error_message      = 'INITSOLVER: negative densities'
+         write(*,*) global_error_message
+         if (present(error)) error = global_error_flag
+         return
+      end if
+      !--------------------------------------------------------------
+
       !getting everything ready to interpolate
       call spline(z_ode,solmat,nsteps,1d30,1d30,ddsolmat)
       call spline(z_ode,solvoid,nsteps,1d30,1d30,ddsolvoid)
 
 
       if (debugging) then
-         first_a_debug = 1.e-4
+         first_a_debug = 1.e-1
          if (CP%void_model.eq.theta_void) then
             open(42, file='solutions_thetabin.dat')
             open(666,file='binned_coupling_thetabin.dat')
@@ -303,9 +315,8 @@ subroutine deinterface(CP)
         write(*,'("Om_Lambda            = ",f9.6)') CP%omegav
         write(*,'("Om_K                 = ",f9.6)') CP%omegak
         write(*,'("Om_m (1-Om_K-Om_L)   = ",f9.6)') 1-CP%omegak-CP%omegav
-        write(*,'("100 theta (CosmoMC)  = ",f9.6)') 100*CosmomcTheta()
+!        write(*,'("100 theta (CosmoMC)  = ",f9.6)') 100*CosmomcTheta()
       end if
-
 end subroutine deinterface
 
 
