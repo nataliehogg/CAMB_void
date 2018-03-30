@@ -46,9 +46,9 @@ class ParamError(MCSamplesError):
 def loadMCSamples(file_root, ini=None, jobItem=None, no_cache=False, settings={}, dist_settings={}):
     """
     Loads a set of samples from a file or files.
-
+    
     Sample files are plain text (*file_root.txt*) or a set of files (*file_root_1.txt*, *file_root_2.txt*, etc.).
-
+    
     Auxiliary files **file_root.paramnames** gives the parameter names
     and (optionally) **file_root.ranges** gives hard prior parameter ranges.
 
@@ -71,17 +71,12 @@ def loadMCSamples(file_root, ini=None, jobItem=None, no_cache=False, settings={}
     if not os.path.exists(path): os.mkdir(path)
     cachefile = os.path.join(path, name) + '.py_mcsamples'
     samples = MCSamples(file_root, jobItem=jobItem, ini=ini, settings=settings)
-    if os.path.isfile(file_root + '.paramnames'):
-        allfiles = files + [file_root + '.ranges', file_root + '.paramnames', file_root + '.properties.ini']
-    else:  # new format (txt+yaml)
-        mid = "" if file_root.endswith("/") else "__"
-        allfiles = files + [file_root + mid + ending for ending in ['input.yaml', 'full.yaml']]
+    allfiles = files + [file_root + '.ranges', file_root + '.paramnames', file_root + '.properties.ini']
     if not no_cache and os.path.exists(cachefile) and lastModified(allfiles) < os.path.getmtime(cachefile):
         try:
             with open(cachefile, 'rb') as inp:
                 cache = pickle.load(inp)
-            if cache.version == pickle_version and samples.ignore_rows == cache.ignore_rows \
-                    and samples.min_weight_ratio == cache.min_weight_ratio:
+            if cache.version == pickle_version and samples.ignore_rows == cache.ignore_rows:
                 changed = len(samples.contours) != len(cache.contours) or \
                           np.any(np.array(samples.contours) != np.array(cache.contours))
                 cache.updateSettings(ini=ini, settings=settings, doUpdate=changed)
@@ -109,23 +104,23 @@ class Kernel1D(object):
 class MCSamples(Chains):
     """
     The main high-level class for a collection of parameter samples.
-
+    
     Derives from :class:`.chains.Chains`, adding high-level functions including Kernel Density estimates, parameter ranges and custom settings.
     """
 
     def __init__(self, root=None, jobItem=None, ini=None, settings=None, ranges=None, **kwargs):
-        """
+        """        
         For a description of the various analysis settings and default values see
         `analysis_defaults.ini <http://getdist.readthedocs.org/en/latest/analysis_settings.html>`_.
 
-
-        :param root: A root file name when loading from file
+        
+        :param root: A root file name when loading from file 
         :param jobItem: Optional paramgrid.batchjob.jobItem instance if a member of a parameter grid
         :param ini: a .ini file to use for custom analysis settings
         :param settings: a dictionary of custom analysis settings
         :param ranges: a dictionary giving any additional hard prior bounds for parameters, eg. {'x':[0, 1], 'y':[None,2]}
         :param kwargs: keyword arguments passed to inherited classes, e.g. to manually make a samples object from sample arrays in memory:
-
+        
                - **paramNamesFile**: optional name of .paramnames file with parameter names
                - **samples**: array of parameter values for each sample, passed to :meth:`setSamples`
                - **weights**: array of weights for samples
@@ -133,7 +128,7 @@ class MCSamples(Chains):
                - **names**: list of names for the parameters
                - **labels**:  list of latex labels for the parameters
                - **ignore_rows**:
-
+               
                      - if int >=1: The number of rows to skip at the file in the beginning of the file
                      - if float <1: The fraction of rows to skip at the beginning of the file
                - **name_tag**: a name tag for this instance
@@ -145,10 +140,6 @@ class MCSamples(Chains):
         self.markers = {}
 
         self.ini = ini
-        if self.jobItem:
-            self.batch_path = self.jobItem.batchPath
-        else:
-            self.batch_path = ''
 
         self._readRanges()
         if ranges:
@@ -184,9 +175,6 @@ class MCSamples(Chains):
 
         self.rootdirname = ""
         self.indep_thin = 0
-        if 'ignore_rows' in kwargs:
-            if settings is None: settings = {}
-            settings['ignore_rows'] = kwargs['ignore_rows']
         self.ignore_rows = float(kwargs.get('ignore_rows', 0))
         self.subplot_size_inch = 4.0
         self.subplot_size_inch2 = self.subplot_size_inch
@@ -215,14 +203,12 @@ class MCSamples(Chains):
                 self.ignore_lines = 0
         else:
             self.properties = None
-        if self.ignore_rows and self.samples is not None or self.chains is not None:
-            self.removeBurnFraction(self.ignore_rows)
 
     def setRanges(self, ranges):
         """
         Sets the ranges parameters, e.g. hard priors on positivity etc. If a min or max value is None, then it is assumed to be unbounded.
 
-        :param ranges: A list or a tuple of [min,max] values for each parameter,
+        :param ranges: A list or a tuple of [min,max] values for each parameter, 
                        or a dictionary giving [min,max] values for specific parameter names
         """
         if isinstance(ranges, (list, tuple)):
@@ -269,7 +255,6 @@ class MCSamples(Chains):
             self.ignore_frac = self.ignore_rows
         else:
             self.ignore_frac = 0
-        ini.setAttr('min_weight_ratio', self)
 
     def initParameters(self, ini):
         """
@@ -324,7 +309,6 @@ class MCSamples(Chains):
         ini.setAttr('converge_test_limit', self, self.contours[-1])
         ini.setAttr('corr_length_thin', self)
         ini.setAttr('corr_length_steps', self)
-        self.batch_path = ini.string('batch_path', self.batch_path, allowEmpty=False)
 
     def _initLimits(self, ini=None):
         bin_limits = ""
@@ -386,7 +370,7 @@ class MCSamples(Chains):
         self.loadChains(self.root, chain_files)
 
         if self.ignore_frac and (not self.jobItem or
-                                 (not self.jobItem.isImportanceJob and not self.jobItem.isBurnRemoved())):
+                                     (not self.jobItem.isImportanceJob and not self.jobItem.isBurnRemoved())):
             self.removeBurnFraction(self.ignore_frac)
             if chains.print_load_details: print('Removed %s as burn in' % self.ignore_frac)
         else:
@@ -429,8 +413,8 @@ class MCSamples(Chains):
         Make file of weight-1 samples by choosing samples
         with probability given by their weight.
 
-        :param filename: The filename to write to, leave empty if no output file is needed
-        :param single_thin: factor to thin by; if not set generates as many samples as it can up to self.max_scatter_points
+        :param filename: The filename to write to, Leave empty if no output file is needed
+        :param single_thin: factor to thin by; if not set generates as many samples as it can
         :return: numpy array of selected weight-1 samples
         """
         if single_thin is None:
@@ -569,7 +553,7 @@ class MCSamples(Chains):
             param_map = ''
             for par in self.paramNames.parsWithNames(params):
                 self._initParamRanges(par.name)
-                if par.param_max < 0 or par.param_min < (par.param_max - par.param_min) / 10:
+                if par.param_max < 0 or par.param_min < par.param_max - par.param_min:
                     param_map += 'N'
                 else:
                     param_map += 'L'
@@ -695,8 +679,8 @@ class MCSamples(Chains):
             PCAtext += '%4i' % (j + 1)
             for i in range(n):
                 PCAtext += '%8.3f' % (
-                        np.sum(self.weights * PCdata[:, i]
-                               * (self.samples[:, j] - self.means[j]) / self.sddev[j]) / self.norm)
+                    np.sum(self.weights * PCdata[:, i]
+                           * (self.samples[:, j] - self.means[j]) / self.sddev[j]) / self.norm)
 
             PCAtext += '   (%s)\n' % (self.parLabel(j))
 
@@ -707,7 +691,7 @@ class MCSamples(Chains):
 
     def getNumSampleSummaryText(self):
         """
-        Returns a summary text describing numbers of parameters and samples,
+        Returns a summary text describing numbers of parameters and samples, 
         and various measures of the effective numbers of samples.
 
         :return: The summary text as a string.
@@ -730,7 +714,7 @@ class MCSamples(Chains):
         :param test_confidence: confidence limit to test for convergence (two-tail, only applies to some tests)
         :param writeDataToFile: True if should write output to a file
         :param what: The tests to run. Should be a list of any of the following:
-
+        
             - 'MeanVar': Gelman-Rubin sqrt(var(chain mean)/mean(chain var)) test in individual parameters (multiple chains only)
             - 'GelmanRubin':  Gelman-Rubin test for the worst orthogonalized parameter (multiple chains only)
             - 'SplitTest': Crude test for variation in confidence limits when samples are split up into subsets
@@ -815,7 +799,7 @@ class MCSamples(Chains):
             # Return the rms ([change in upper/lower quantile]/[standard deviation])
             # when data split into 2, 3,.. sets
             lines += "Split tests: rms_n([delta(upper/lower quantile)]/sd) n={2,3,4}, limit=%.0f%%:\n" % (
-                    100 * self.converge_test_limit)
+                100 * self.converge_test_limit)
             lines += "i.e. mean sample splitting change in the quantiles in units of the st. dev.\n"
             lines += "\n"
 
@@ -1047,7 +1031,7 @@ class MCSamples(Chains):
 
     def getAutoBandwidth1D(self, bins, par, param, mult_bias_correction_order=None, kernel_order=1, N_eff=None):
         """
-        Get optimized kernel density bandwidth (in units of the range of the bins)
+        Get optimized kernel density bandwidth (in units the range of the bins)
         Based on optimal Improved Sheather-Jones bandwidth for basic Parzen kernel, then scaled if higher-order method being used.
         For details see the `notes <http://cosmologist.info/notes/GetDist.pdf>`_.
 
@@ -1055,21 +1039,13 @@ class MCSamples(Chains):
         :param par: A :class:`~.paramnames.ParamInfo` instance for the parameter to analyse
         :param param: index of the parameter to use
         :param mult_bias_correction_order: order of multiplicative bias correction (0 is basic Parzen kernel); by default taken from instance settings.
-        :param kernel_order: order of the kernel (0 is Parzen, 1 does linear boundary correction, 2 is a higher-order kernel)
+        :param kernel_order: order of the kernel (0 is Parzen, 1 does linear boundary correction, 2 is a higher-order kernel) 
         :param N_eff: effective number of samples. If not specified estimated using weights, autocorrelations, and fiducial bandwidth
         :return: kernel density bandwidth (in units the range of the bins)
         """
         if N_eff is None:
             N_eff = self._get1DNeff(par, param)
         h = kde.gaussian_kde_bandwidth_binned(bins, Neff=N_eff)
-        bin_range = max(par.param_max, par.range_max) - min(par.param_min, par.range_min)
-        if h is None or h < 0.01 * N_eff ** (-1. / 5) * (par.range_max - par.range_min) / bin_range:
-            hnew = 1.06 * par.sigma_range * N_eff ** (-1. / 5) / bin_range
-            logging.warning(
-                'auto bandwidth for %s very small or failed (h=%s,N_eff=%s). Using fallback (h=%s)' % (
-                    par.name, h, N_eff, hnew))
-            h = hnew
-
         par.kde_h = h
         m = mult_bias_correction_order
         if m is None: m = self.mult_bias_correction_order
@@ -1111,14 +1087,6 @@ class MCSamples(Chains):
         has_limits = parx.has_limits or pary.has_limits
         do_correlated = not parx.has_limits or not pary.has_limits
 
-        def fallback_widths():
-            logging.warning('2D kernel density bandwidth optimizer failed for %s, %s. Using fallback width.' % (
-                parx.name, pary.name))
-            c = max(min(corr, self.max_corr_2D), -self.max_corr_2D)
-            hx = parx.sigma_range / N_eff ** (1. / 6)
-            hy = pary.sigma_range / N_eff ** (1. / 6)
-            return hx, hy, c
-
         if min_corr < abs(corr) <= self.max_corr_2D and do_correlated:
             # 'shear' the data so fairly uncorrelated, making sure shear keeps any bounds on one parameter unchanged
             # the binning step will rescale to make roughly isotropic as assumed by the 2D kernel optimizer psi_{ab} derivatives
@@ -1146,31 +1114,25 @@ class MCSamples(Chains):
             bin1, R1 = kde.bin_samples(p1, nbins=base_fine_bins_2D, range_min=imin, range_max=imax)
             bin2, R2 = kde.bin_samples(p2, nbins=base_fine_bins_2D)
             rotbins, _ = self._make2Dhist(bin1, bin2, base_fine_bins_2D, base_fine_bins_2D)
-            try:
-                opt = kde.KernelOptimizer2D(rotbins, N_eff, 0, do_correlation=not has_limits)
-                hx, hy, c = opt.get_h()
-                hx *= R1
-                hy *= R2
-                kernelC = S.dot(np.array([[hx ** 2, hx * hy * c], [hx * hy * c, hy ** 2]])).dot(S.T)
-                hx, hy, c = np.sqrt(kernelC[0, 0]), np.sqrt(kernelC[1, 1]), kernelC[0, 1] / np.sqrt(
-                    kernelC[0, 0] * kernelC[1, 1])
-                if pary.has_limits:
-                    hx, hy = hy, hx
-                    # print 'derotated pars', hx, hy, c
-            except ValueError:
-                hx, hy, c = fallback_widths()
+            opt = kde.KernelOptimizer2D(rotbins, N_eff, 0, do_correlation=not has_limits)
+            hx, hy, c = opt.get_h()
+            hx *= R1
+            hy *= R2
+            kernelC = S.dot(np.array([[hx ** 2, hx * hy * c], [hx * hy * c, hy ** 2]])).dot(S.T)
+            hx, hy, c = np.sqrt(kernelC[0, 0]), np.sqrt(kernelC[1, 1]), kernelC[0, 1] / np.sqrt(
+                kernelC[0, 0] * kernelC[1, 1])
+            if pary.has_limits:
+                hx, hy = hy, hx
+                # print 'derotated pars', hx, hy, c
         elif abs(corr) > self.max_corr_2D or not do_correlated and corr > 0.8:
             c = max(min(corr, self.max_corr_2D), -self.max_corr_2D)
             hx = parx.sigma_range / N_eff ** (1. / 6)
             hy = pary.sigma_range / N_eff ** (1. / 6)
         else:
-            try:
-                opt = kde.KernelOptimizer2D(bins, N_eff, corr, do_correlation=not has_limits)
-                hx, hy, c = opt.get_h()
-                hx *= rangex
-                hy *= rangey
-            except ValueError:
-                hx, hy, c = fallback_widths()
+            opt = kde.KernelOptimizer2D(bins, N_eff, corr, do_correlation=not has_limits)
+            hx, hy, c = opt.get_h()
+            hx *= rangex
+            hy *= rangey
 
         if mult_bias_correction_order is None: mult_bias_correction_order = self.mult_bias_correction_order
         logging.debug('hx/sig, hy/sig, corr =%s, %s, %s', hx / parx.err, hy / pary.err, c)
@@ -1281,7 +1243,7 @@ class MCSamples(Chains):
         :param paramConfid: optional cached :class:`ParamConfidenceData` instance
         :param meanlikes: include mean likelihoods
         :param kwargs: optional settings to override instance settings of the same name (see `analysis_settings`):
-
+        
                - **smooth_scale_1D**
                - **boundary_correction_order**
                - **mult_bias_correction_order**
@@ -1289,8 +1251,6 @@ class MCSamples(Chains):
                - **num_bins**
         :return: A :class:`~.densities.Density1D` instance
         """
-
-        if self.needs_update: self.updateBaseStatistics()
         j = self._parAndNumber(j)[0]
         if j is None: return None
 
@@ -1319,7 +1279,6 @@ class MCSamples(Chains):
             # Set automatically.
             smooth_1D = self.getAutoBandwidth1D(bins, par, j, mult_bias_correction_order, boundary_correction_order) \
                         * (binmax - binmin) * abs(smooth_scale_1D) / fine_width
-
         elif smooth_scale_1D < 1.0:
             smooth_1D = smooth_scale_1D * par.err / fine_width
         else:
@@ -1364,15 +1323,15 @@ class MCSamples(Chains):
                 # cf arXiv:1411.5528
                 xWin = Kernel.Win * Kernel.x
                 a1 = convolve1D(prior_mask, xWin, 'valid', cache=cache)[ix]
-                a2 = convolve1D(prior_mask, xWin * Kernel.x, 'valid', cache=cache, cache_args=[1])[ix]
+                a2 = convolve1D(prior_mask, xWin * Kernel.x, 'valid', cache=cache)[ix]
                 xP = convolve1D(bins, xWin, 'same', cache=cache)[ix]
                 if boundary_correction_order == 1:
                     corrected = (density1D.P[ix] * a2 - xP * a1) / (a0 * a2 - a1 ** 2)
                 else:
                     # quadratic correction
-                    a3 = convolve1D(prior_mask, xWin * Kernel.x ** 2, 'valid', cache=cache, cache_args=[1])[ix]
-                    a4 = convolve1D(prior_mask, xWin * Kernel.x ** 3, 'valid', cache=cache, cache_args=[1])[ix]
-                    x2P = convolve1D(bins, xWin * Kernel.x, 'same', cache=cache, cache_args=[1])[ix]
+                    a3 = convolve1D(prior_mask, xWin * Kernel.x ** 2, 'valid', cache=cache)[ix]
+                    a4 = convolve1D(prior_mask, xWin * Kernel.x ** 3, 'valid', cache=cache)[ix]
+                    x2P = convolve1D(bins, xWin * Kernel.x, 'same', cache=cache)[ix]
                     denom = a4 * a2 * a0 - a4 * a1 ** 2 - a2 ** 3 - a3 ** 2 * a0 + 2 * a1 * a2 * a3
                     A = a4 * a2 - a3 ** 2
                     B = a2 * a3 - a4 * a1
@@ -1398,14 +1357,14 @@ class MCSamples(Chains):
                 prior_mask[0] *= 0.5
             if par.has_limits_top:
                 prior_mask[-1] *= 0.5
-            a0 = convolve1D(prior_mask, Kernel.Win, 'same', cache=cache, cache_args=[2])
+            a0 = convolve1D(prior_mask, Kernel.Win, 'same', cache=cache)
             for _ in range(mult_bias_correction_order):
                 # estimate using flattened samples to remove second order biases
                 # mostly good performance, see http://www.jstor.org/stable/2965571 method 3,1 for first order
                 prob1 = density1D.P.copy()
                 prob1[prob1 == 0] = 1
                 fine = bins / prob1
-                conv = convolve1D(fine, Kernel.Win, 'same', cache=cache, cache_args=[2])
+                conv = convolve1D(fine, Kernel.Win, 'same', cache=cache)
                 density1D.setP(density1D.P * conv)
                 density1D.P /= a0
 
@@ -1417,7 +1376,7 @@ class MCSamples(Chains):
         if meanlikes:
             ix = density1D.P > 0
             finebinlikes[ix] /= density1D.P[ix]
-            binlikes = convolve1D(finebinlikes, Kernel.Win, 'same', cache=cache, cache_args=[2])
+            binlikes = convolve1D(finebinlikes, Kernel.Win, 'same', cache=cache)
             binlikes[ix] *= density1D.P[ix] / rawbins[ix]
             if self.shade_likes_is_mean_loglikes:
                 maxbin = np.min(binlikes)
@@ -1504,7 +1463,7 @@ class MCSamples(Chains):
 
     def get2DDensity(self, x, y, normalized=False, **kwargs):
         """
-        Returns a :class:`~.densities.Density2D` instance with marginalized 2D density.
+        Returns a :class:`~.densties.Density2D` instance with marginalized 2D density.
 
         :param x: index or name of x parameter
         :param y: index or name of y parameter
@@ -1530,7 +1489,7 @@ class MCSamples(Chains):
         :param get_density: only get the 2D marginalized density, no additional plot data
         :param meanlikes: calculate mean likelihoods as well as marginalized density (returned as array in density.likes)
         :param kwargs: optional settings to override instance settings of the same name (see `analysis_settings`):
-
+        
             - **fine_bins_2D**
             - **boundary_correction_order**
             - **mult_bias_correction_order**
@@ -1588,7 +1547,6 @@ class MCSamples(Chains):
 
         # smooth_x and smooth_y should be in rotated bin units
         if smooth_scale_2D < 0:
-
             rx, ry, corr = self.getAutoBandwidth2D(histbins, parx, pary, j, j2, corr, xbinmax - xbinmin,
                                                    ybinmax - ybinmin,
                                                    base_fine_bins_2D,
@@ -1623,11 +1581,11 @@ class MCSamples(Chains):
         bins2D = convolve2D(histbins, Win, 'same', largest_size=convolvesize, cache=cache)
 
         if meanlikes:
-            bin2Dlikes = convolve2D(finebinlikes, Win, 'same', largest_size=convolvesize, cache=cache, cache_args=[2])
+            bin2Dlikes = convolve2D(finebinlikes, Win, 'same', largest_size=convolvesize, cache=cache)
             if mult_bias_correction_order:
                 ix = bin2Dlikes > 0
                 finebinlikes[ix] /= bin2Dlikes[ix]
-                likes2 = convolve2D(finebinlikes, Win, 'same', largest_size=convolvesize, cache=cache, cache_args=[2])
+                likes2 = convolve2D(finebinlikes, Win, 'same', largest_size=convolvesize, cache=cache)
                 likes2[ix] *= bin2Dlikes[ix]
                 bin2Dlikes = likes2
             del finebinlikes
@@ -1655,16 +1613,9 @@ class MCSamples(Chains):
                 winy = Win * y
                 a10 = convolve2D(prior_mask, winx, 'valid', largest_size=convolvesize, cache=cache)[ix]
                 a01 = convolve2D(prior_mask, winy, 'valid', largest_size=convolvesize, cache=cache)[ix]
-                a20 = \
-                    convolve2D(prior_mask, winx * indexes, 'valid', largest_size=convolvesize, cache=cache,
-                               cache_args=[1])[
-                        ix]
-                a02 = convolve2D(prior_mask, winy * y, 'valid', largest_size=convolvesize, cache=cache, cache_args=[1])[
-                    ix]
-                a11 = \
-                    convolve2D(prior_mask, winy * indexes, 'valid', largest_size=convolvesize, cache=cache,
-                               cache_args=[1])[
-                        ix]
+                a20 = convolve2D(prior_mask, winx * indexes, 'valid', largest_size=convolvesize, cache=cache)[ix]
+                a02 = convolve2D(prior_mask, winy * y, 'valid', largest_size=convolvesize, cache=cache)[ix]
+                a11 = convolve2D(prior_mask, winy * indexes, 'valid', largest_size=convolvesize, cache=cache)[ix]
                 xP = convolve2D(histbins, winx, 'same', largest_size=convolvesize, cache=cache)[ix]
                 yP = convolve2D(histbins, winy, 'same', largest_size=convolvesize, cache=cache)[ix]
                 denom = (a20 * a01 ** 2 + a10 ** 2 * a02 - a00 * a02 * a20 + a11 ** 2 * a00 - 2 * a01 * a10 * a11)
@@ -1682,16 +1633,17 @@ class MCSamples(Chains):
         if mult_bias_correction_order:
             prior_mask = np.ones((ysize + 2 * winw, xsize + 2 * winw))
             self._setEdgeMask2D(parx, pary, prior_mask, winw, alledge=True)
-            a00 = convolve2D(prior_mask, Win, 'valid', largest_size=convolvesize, cache=cache, cache_args=[2])
+            a00 = convolve2D(prior_mask, Win, 'valid', largest_size=convolvesize, cache=cache)
             for _ in range(mult_bias_correction_order):
-                box = histbins.copy()
+                box = histbins.copy()  # careful with cache in convolve2D.
                 ix2 = bins2D > np.max(bins2D) * 1e-8
                 box[ix2] /= bins2D[ix2]
-                bins2D *= convolve2D(box, Win, 'same', largest_size=convolvesize, cache=cache, cache_args=[2])
+                bins2D *= convolve2D(box, Win, 'same', largest_size=convolvesize, cache=cache)
                 bins2D /= a00
 
         x = np.linspace(xbinmin, xbinmax, xsize)
         y = np.linspace(ybinmin, ybinmax, ysize)
+
         density = Density2D(x, y, bins2D,
                             view_ranges=[(parx.range_min, parx.range_max), (pary.range_min, pary.range_max)])
         density.normalize('max', in_place=True)
@@ -1805,7 +1757,7 @@ class MCSamples(Chains):
 
     def getRawNDDensity(self, xs, normalized=False, **kwargs):
         """
-        Returns a :class:`~.densities.DensityND` instance with marginalized ND density.
+        Returns a :class:`~.densties.DensityND` instance with marginalized ND density.
 
         :param xs: indices or names of x_i parameters
         :param kwargs: keyword arguments for the :func:`getNDDensityGridData` function
@@ -1832,7 +1784,7 @@ class MCSamples(Chains):
         :param meanlikes: calculate mean likelihoods as well as marginalized density (returned as array in density.likes)
         :param maxlikes: calculate the profile likelihoods in addition to the others (returned as array in density.maxlikes)
         :param kwargs: optional settings to override instance settings of the same name (see `analysis_settings`):
-
+               
         :return: a :class:`~.densities.DensityND` instance
         """
 
@@ -1982,19 +1934,16 @@ class MCSamples(Chains):
 
     def _readRanges(self):
         if self.root:
-            ranges_file_classic = self.root + '.ranges'
-            ranges_file_new = (
-                    self.root + ('' if self.root.endswith('/') else '__') + 'full.yaml')
-            for ranges_file in [ranges_file_classic, ranges_file_new]:
-                if os.path.isfile(ranges_file):
-                    self.ranges = ParamBounds(ranges_file)
-                    return
+            ranges_file = self.root + '.ranges'
+            if os.path.isfile(ranges_file):
+                self.ranges = ParamBounds(ranges_file)
+                return
         self.ranges = ParamBounds()
 
     def getBounds(self):
         """
         Returns the bounds in the form of a :class:`~.parampriors.ParamBounds` instance, for example for determining plot ranges
-
+        
         Bounds are not  the same as self.ranges, as if samples are not near the range boundary, the bound is set to None
 
         :return: a :class:`~.parampriors.ParamBounds` instance
@@ -2057,7 +2006,7 @@ class MCSamples(Chains):
         """
         Get best fit sample and n-D confidence limits, and various likelihood based statistics
 
-        :return: a :class:`~.types.LikeStats` instance storing N-D limits for parameter i in result.names[i].ND_limit_top,
+        :return: a :class:`~.types.LikeStats` instance storing N-D limits for parameter i in result.names[i].ND_limit_top, 
                  result.names[i].ND_limit_bot, and best-fit sample value in result.names[i].bestfit_sample
         """
         return self.likeStats or self._setLikeStats()
@@ -2179,7 +2128,7 @@ class MCSamples(Chains):
                 if not marge_limits_bot and not marge_limits_top:
                     # Two tail, check if limits are at very different density
                     if (math.fabs(density1D.Prob(tail_confid_top) -
-                                  density1D.Prob(tail_confid_bot)) < self.credible_interval_threshold):
+                                      density1D.Prob(tail_confid_bot)) < self.credible_interval_threshold):
                         tail_limit_top = tail_confid_top
                         tail_limit_bot = tail_confid_bot
 
@@ -2225,30 +2174,6 @@ class MCSamples(Chains):
 
         return cust2DPlots
 
-    def addDerived(self, paramVec, name, label='', comment='', range=None):
-        """
-        Adds a new derived parameter
-
-        :param paramVec: The vector of parameter values to add. For example a combination of parameter arrays from MCSamples.getParams()
-        :param name: The name for the new parameter
-        :param label: optional latex label for the parameter
-        :param comment: optional comment describing the parameter
-        :param range: if specified, a tuple of min, max values for the new parameter hard prior bounds (either can be None for one-side bound)
-        :return: The added parameter's :class:`~.paramnames.ParamInfo` object
-        """
-
-        if range is not None:
-            self.ranges.setRange(name, range)
-        return super(MCSamples, self).addDerived(paramVec, name, label=label, comment=comment)
-
-    def getParamSampleDict(self, ix):
-        """
-        Returns a dictionary of parameter values for sample number ix
-        """
-        res = super(MCSamples, self).getParamSampleDict(ix)
-        res.update(self.ranges.fixedValueDict())
-        return res
-
     def saveAsText(self, root, chain_index=None, make_dirs=False):
         """
         Saves samples as text file, including .ranges and .paramnames.
@@ -2261,17 +2186,8 @@ class MCSamples(Chains):
         if not chain_index:
             self.ranges.saveToFile(root + '.ranges')
 
-    def saveChainsAsText(self, root, make_dirs=False):
-        if self.chains is None:
-            chains = self.getSeparateChains()
-        else:
-            chains = self.chains
-        for i, chain in enumerate(chains):
-            chain.saveAsText(root, i, make_dirs)
-        self.ranges.saveToFile(root + '.ranges')
-        self.paramNames.saveAsText(root + '.paramnames')
-
     # Write functions for GetDist.py
+
     def writeScriptPlots1D(self, filename, plotparams=None, ext=None):
         """
         Write a script that generates a 1D plot. Only intended for use by GetDist.py script.
@@ -2280,7 +2196,7 @@ class MCSamples(Chains):
         :param plotparams: The list of parameters to plot (default: all)
         :param ext: The extension for the filename, Default if None
         """
-        text = 'markers = ' + (str(self.markers) if self.markers else 'None') + '\n'
+        text = 'markers=' + str(self.markers) + '\n'
         if plotparams:
             text += 'g.plots_1d(roots,[' + ",".join(['\'' + par + '\'' for par in plotparams]) + '], markers=markers)'
         else:
@@ -2293,7 +2209,7 @@ class MCSamples(Chains):
         Write script that generates a 2 dimensional plot. Only intended for use by GetDist.py script.
 
         :param filename: The filename to write to.
-        :param plot_2D_param: parameter to plot other variables against
+        :param plot_2D_param: parameter to plot other variables against 
         :param cust2DPlots: list of parts of parameter names to plot
         :param writeDataToFile: True if should write to file
         :param ext: The extension for the filename, Default if None
@@ -2356,7 +2272,7 @@ class MCSamples(Chains):
 
     def _WritePlotFile(self, filename, subplot_size, text, tag, ext=None):
         """
-        Write plot file.
+        Write plot file. 
         Used by other functions
 
         :param filename: The filename to write to
@@ -2370,7 +2286,7 @@ class MCSamples(Chains):
             if self.plot_data_dir:
                 f.write("g=plots.GetDistPlotter(plot_data=r'%s')\n" % self.plot_data_dir)
             else:
-                f.write("g=plots.GetDistPlotter(chain_dir=r'%s')\n" % (self.batch_path or os.path.dirname(self.root)))
+                f.write("g=plots.GetDistPlotter(chain_dir=r'%s')\n" % os.path.dirname(self.root))
 
             f.write("g.settings.setWithSubplotSize(%s)\n" % subplot_size)
             f.write("roots = ['%s']\n" % self.rootname)
@@ -2393,9 +2309,6 @@ def GetChainRootFiles(rootdir):
     """
     pattern = os.path.join(rootdir, '*.paramnames')
     files = [os.path.splitext(f)[0] for f in glob.glob(pattern)]
-    ending = 'full.yaml'
-    pattern = os.path.join(rootdir, "*" + ending)
-    files += [f[:-len(ending)].rstrip("_") for f in glob.glob(pattern)]
     files.sort()
     return files
 

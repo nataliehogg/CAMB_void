@@ -149,7 +149,7 @@
                 if (mod(this%num_sample,100*this%Oversample_fast)==0) call CheckParamChange
             end if
         else
-            if (this%num_sample > 1000) then
+            if (this%num_sample > 100000) then
                 call DoAbort('MCMC.f90: Couldn''t start after 1000 tries - check starting ranges')
             end if
         end if

@@ -8,7 +8,6 @@ import sys
 import time
 import six
 from getdist import types, IniFile
-from getdist.mcsamples import loadMCSamples
 
 
 def resetGrid(directory):
@@ -28,14 +27,9 @@ def readobject(directory=None):
             return gridconfig.makeGrid(directory, readOnly=True, interactive=False)
         return None
     try:
-        config_dir = os.path.abspath(directory) + os.sep + 'config'
-        if os.path.exists(config_dir):
-            # set path in case using functions defined and hene imported from in settings file
-            sys.path.insert(0, config_dir)
         with open(fname, 'rb') as inp:
             return pickle.load(inp)
-    except Exception as e:
-        print('Error lading cached batch object: %s', e)
+    except:
         resetGrid(directory)
         if gridconfig.pathIsGrid(directory):
             return gridconfig.makeGrid(directory, readOnly=True, interactive=False)
@@ -103,10 +97,7 @@ class dataSet(object):
 
     def extendForImportance(self, names, params):
         data = copy.deepcopy(self)
-        if not '_post_' in data.tag:
-            data.tag += '_post_' + "_".join(names)
-        else:
-            data.tag += '_' + "_".join(names)
+        data.tag += '_post_' + "_".join(names)
         data.importanceNames = names
         data.importanceParams = data.standardizeParams(params)
         data.names += data.importanceNames
@@ -182,17 +173,6 @@ class importanceSetting(object):
         return True
 
 
-class importanceFilter(importanceSetting):
-    # class for trivial importance sampling filters that can be done in python,
-    # e.g. restricting a parameter to a new range
-
-    def __init__(self, names, dist_settings=None, minimize=False):
-        self.names = names
-        self.inis = [self]
-        self.dist_settings = dist_settings or {}
-        self.want_minimize = minimize
-
-
 class jobItem(propertiesItem):
     def __init__(self, path, param_set, data_set, base='base', minimize=True):
         self.param_set = param_set
@@ -236,16 +216,13 @@ class jobItem(propertiesItem):
                 if len(impRun) > 2 and not impRun[2].wantImportance(self): continue
                 impRun = importanceSetting(impRun[0], impRun[1])
             if len(set(impRun.names).intersection(self.data_set.names)) > 0:
-                print('importance job duplicating parent data set: %s with %s'%(self.name,impRun.names))
+                print('importance job duplicating parent data set:' + self.name)
                 continue
             data = self.data_set.extendForImportance(impRun.names, impRun.inis)
             job = jobItem(self.batchPath, self.param_set, data, minimize=impRun.want_minimize)
             job.importanceTag = "_".join(impRun.names)
             job.importanceSettings = impRun.inis
-            if not '_post_' in self.name:
-                tag = '_post_' + job.importanceTag
-            else:
-                tag = '_' + job.importanceTag
+            tag = '_post_' + job.importanceTag
             job.name = self.name + tag
             job.chainRoot = self.chainRoot + tag
             job.distPath = self.distPath
@@ -257,8 +234,6 @@ class jobItem(propertiesItem):
             job.parent = self
             job.group = self.group
             job.dist_settings.update(impRun.dist_settings)
-            if isinstance(impRun, importanceFilter):
-                job.importanceFilter = impRun
             job.makeIDs()
             self.importanceItems.append(job)
 
@@ -285,19 +260,6 @@ class jobItem(propertiesItem):
 
     def importanceJobs(self):
         return self.importanceItems
-
-    def importanceJobsRecursive(self):
-        res = copy.copy(self.importanceItems)
-        for r in self.importanceItems:
-            res += r.importanceJobsRecursive()
-        return res
-
-    def removeImportance(self, job):
-        if job in self.importanceItems:
-            self.importanceItems.remove(job)
-        else:
-            for j in self.importanceItems:
-                j.removeImportance(job)
 
     def makeChainPath(self):
         makePath(self.chainPath)
@@ -424,9 +386,6 @@ class jobItem(propertiesItem):
             elif not silent:
                 print('missing: ' + marge_root)
 
-    def getMCSamples(self, ini=None, settings={}):
-        return loadMCSamples(self.chainRoot, jobItem=self, ini=ini, settings=settings)
-
 
 class batchJob(propertiesItem):
     def __init__(self, path, iniDir, cosmomcPath=None):
@@ -436,14 +395,12 @@ class batchJob(propertiesItem):
         self.commonPath = self.basePath + iniDir
         self.subBatches = []
         self.jobItems = None
-        self.getdist_options = {}
 
     def propertiesIniFile(self):
         return os.path.join(self.batchPath, 'config', 'config.ini')
 
     def makeItems(self, settings, messages=True):
         self.jobItems = []
-        self.getdist_options = getattr(settings, 'getdist_options', self.getdist_options)
         allImportance = getattr(settings, 'importanceRuns', [])
         for group in settings.groups:
             for data_set in group.datasets:
@@ -458,28 +415,23 @@ class batchJob(propertiesItem):
             self.jobItems.append(item)
             item.makeImportance(allImportance)
 
-        if hasattr(settings, 'importance_filters'):
-            for job in self.jobItems:
-                for item in job.importanceJobs():
-                    item.makeImportance(settings.importance_filters)
-                job.makeImportance(settings.importance_filters)
-
         for item in list(self.items()):
-            for x in [imp for imp in item.importanceJobsRecursive()]:
+            for x in [imp for imp in item.importanceJobs()]:
                 if self.has_normed_name(x.normed_name):
                     if messages: print('replacing importance sampling run with full run: ' + x.name)
-                    item.removeImportance(x)
+                    item.importanceItems.remove(x)
         for item in list(self.items()):
-            for x in [imp for imp in item.importanceJobsRecursive()]:
+            for x in [imp for imp in item.importanceJobs()]:
                 if self.has_normed_name(x.normed_name, wantImportance=True, exclude=x):
                     if messages: print('removing duplicate importance sampling run: ' + x.name)
-                    item.removeImportance(x)
+                    item.importanceItems.remove(x)
+
 
     def items(self, wantSubItems=True, wantImportance=False):
         for item in self.jobItems:
             yield (item)
             if wantImportance:
-                for imp in item.importanceJobsRecursive():
+                for imp in item.importanceJobs():
                     if not imp.name in self.skip: yield (imp)
 
         if wantSubItems:
@@ -523,8 +475,10 @@ class batchJob(propertiesItem):
             if jobItem.name == root: return jobItem
         return self.normed_name_item(root, True, True)
 
+
     def save(self, filename=''):
         saveobject(self, (self.batchPath + 'batch.pyobj', filename)[filename != ''])
+
 
     def makeDirectories(self, setting_file=None):
         makePath(self.batchPath)
@@ -537,3 +491,4 @@ class batchJob(propertiesItem):
             props.saveFile()
         makePath(self.batchPath + 'iniFiles')
         makePath(self.batchPath + 'postIniFiles')
+

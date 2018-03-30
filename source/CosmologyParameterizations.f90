@@ -141,8 +141,18 @@
                 cmb%H0=0
                 return
             end if
+            !!call InitCAMB(CMB,error)
+            if (CMB%tau==0._mcp) then
+               CMB%zre=0
+            else
+               CMB%zre = CosmoCalc%GetZreFromTau(CMB, CMB%tau)
+            end if
+
+
             !MMmod: computing theta as derived, will be passed to derived(1) in place of H0
             CMB%thetaCMB = CosmoCalc%CMBToTheta(CMB)*100
+            LastCMB(cache) = CMB
+            cache = mod(cache,ncache)+1            
         end select
         class default
         call MpiStop('CosmologyParameterizations: Calculator is not TCosmologyCalculator')
