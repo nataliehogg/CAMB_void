@@ -1,7 +1,7 @@
 !#############################################################
 !#This module computes the main equations for the interactive#
 !#void model.                                                #
-!#Current version updated on 15/03/2018                      #
+!#Current version updated on 06/04/2018                      #
 !#############################################################
 
 module initsolver
@@ -22,8 +22,9 @@ real                               :: coupling                    !value of the 
 integer                            :: model                       !choice of the interaction model we want to use
 integer, parameter                 :: theta_void=1, smooth_void=2 !possible options for q(z) binned reconstruction
 integer, parameter                 :: GP_void=3, baseline_void=4  !possible options for q(z) gaussian process reconstruction
+integer, parameter                 :: exact_void=0                !exact solution of the binned equation (only for single bin at the moment)
 
-logical                            :: debugging = .false.         !if T prints some files to check solver
+logical                            :: debugging = .true.         !if T prints some files to check solver
 
 contains
 
@@ -77,6 +78,8 @@ integer               :: i
             Q=0._dl
          end if
          Q = -Q*rhov
+      else if (CP%void_model.eq.exact_void) then
+         Q = CP%qbins(1)
       else
          write(*,*) 'wait for it'
       end if
@@ -110,7 +113,6 @@ else
    rho_m = solmat(nsteps) * ( (1+z)/(1+z_ode(nsteps)) )**3.
    rho_v = solvoid(nsteps)
 end if
-
 !write(321,*) z, rho_m/(rho_m+rho_v), rho_v/(rho_m+rho_v)
 
 end subroutine getrhos
@@ -176,6 +178,14 @@ subroutine deinterface(CP,error)
 
 
       !Gaussian process interface
+   if (CP%void_model.eq.exact_void) then
+      do i=1,nsteps+1
+         z_ode(i)   = initial_z+(i-1)*h
+         solvoid(i) = rhov_init*(1+z_ode(i))**CP%qbins(1)
+         solmat(i)  = rhoc_init*(1+z_ode(i))**3. + rhov_init*(CP%qbins(1)/(CP%qbins(1)-3))*((1+z_ode(i))**3.-(1+z_ode(i))**CP%qbins(1))
+      end do
+      
+   else
       if ((CP%void_model.eq.GP_void).or.(CP%void_model.eq.baseline_void)) then
 
          !Setting GP redshift to median redshift of each bin
@@ -187,7 +197,7 @@ subroutine deinterface(CP,error)
          !Creating command line 
   
          !Generate tmp file name based on PID
-         write (feature_file(11:16), "(Z6.6)"), getpid()
+         write (feature_file(11:16), "(Z6.6)") getpid()
          !1. Prepare command and launch it!
          write(z_ini, "(E15.7)"      ) initial_z
          write(z_end, "(E15.7)"      ) final_z
@@ -258,6 +268,7 @@ subroutine deinterface(CP,error)
       if (debugging) write(*,*) 'Started solving ODE'
 
       call rk4sys(CP,n,h,x)
+   end if
 
       if (debugging) write(*,*) 'solution done'
 
@@ -268,6 +279,14 @@ subroutine deinterface(CP,error)
       !TEST FOR NEGATIVE DENSITITES----------------------------------
 write(*,*) 'doing overall sign test'
       if (any(solmat.le.0._dl).or.any(solvoid.le.0._dl)) then
+         do i=1,nsteps
+            if (debugging) then
+               if ((solmat(i).le.0._dl).or.(solvoid(i).le.0._dl)) then
+                  write(0,*) i, solmat(i), solvoid(i)
+               end if
+            end if
+            write(456,*) z_ode(i),solvoid(i),solmat(i)
+         end do
          global_error_flag         = 1
          global_error_message      = 'INITSOLVER: negative densities'
          write(*,*) global_error_message
@@ -295,6 +314,9 @@ write(*,*) 'doing overall sign test'
          else if (CP%void_model.eq.baseline_void) then
             open(42, file='solutions_GPbaseline.dat')
             open(666,file='binned_coupling_GPbaseline.dat')
+         else if (CP%void_model.eq.exact_void) then
+            open(42, file='solutions_exact.dat')
+            open(666,file='binned_coupling_exact.dat')
          end if
          do k=1,nsteps
             debug_a = first_a_debug+k*(1.-first_a_debug)/nsteps
