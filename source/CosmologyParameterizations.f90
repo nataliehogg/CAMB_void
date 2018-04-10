@@ -134,8 +134,9 @@
             call this%TCosmologyParameterization%ParamArrayToTheoryParams(Params, CMB)
 
             error = 0   !JD to prevent stops when using bbn_consistency or m_sterile
-            ! DA = Params(3)/100
-            ! try_b = this%H0_min
+            
+	     !DA = Params(3)/100
+             !try_b = this%H0_min
  
             !NH switching from theta to H0
             try_b= this%H0_max
@@ -310,7 +311,7 @@
     integer, optional :: error
     integer :: j
 
-    CMB%H0=H0
+    !CMB%H0=H0
     if (firsttime) then
         CMB%reserved = 0
         CMB%ombh2 = Params(1)
