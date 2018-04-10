@@ -103,7 +103,7 @@
   P%endred = CMB%endred
   P%numstepsODE = CMB%ODEsteps
   if (P%void_model.eq.2) P%smoothfactor= CMB%smoothfactor
-
+  if (P%void_model.gt.2) P%corrlen = CMB%corrlen
     P%H0 = CMB%H0
     P%Reion%redshift= CMB%zre
     P%Reion%delta_redshift = CMB%zre_delta

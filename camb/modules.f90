@@ -127,13 +127,14 @@
 
         !MMmod: adding parameters for interactive void
         integer   :: void_model                 !selects the specific model to use
+        integer   :: numstepsODE                !NH added ODEsteps
         real(dl)  :: startred, endred           !redshift limits for differential equation
         real(dl)  :: qV                         !working only with constant for now (effectively 2 bins). TO BE CHANGED
         integer   :: numvoidbins                !number of redshift bins for void coupling
         real(dl)  :: smoothfactor               !smoothing facto for tanh connection in binned functions
         real(dl)  :: zbins(maxbins)             !right margin of redshift bins (first left margin is always zero)
         real(dl)  :: qbins(maxbins)             !value of qV within each redshift bin
-        integer   :: numstepsODE
+        real(dl)  :: corrlen                    !NH added correlation length for GP
 
         integer   :: Scalar_initial_condition
         !must be one of the initial_xxx values defined in GaugeInterface
@@ -433,7 +434,7 @@
 
     if (present(error)) then
         error = 0
-    else if (FeedbackLevel > 0 .and. .not. call_again) then
+    else if (FeedbackLevel > 0) then ! .and. .not. call_again) then
         write(*,'("Om_b h^2             = ",f9.6)') CP%omegab*(CP%H0/100)**2
         write(*,'("Om_c h^2             = ",f9.6)') CP%omegac*(CP%H0/100)**2
         write(*,'("Om_nu h^2            = ",f9.6)') CP%omegan*(CP%H0/100)**2

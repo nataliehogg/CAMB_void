@@ -123,25 +123,47 @@
     P%endred     = Ini_Read_Double('ending_z',10._dl)
     P%numstepsODE= Ini_Read_Int('ODEsteps',10000)
 
-    !MMmod: reading specific parameters for different coupling models
-    if ((P%void_model.eq.1).or.(P%void_model.eq.2)) then
-       P%numvoidbins = Ini_Read_Int('num_bins',1)
-       if (P%void_model.eq.2) P%smoothfactor= Ini_Read_Double('smooth_factor',10._dl) !smooth factor not needed for theta binning
-       do i=1,P%numvoidbins
-          write(binnum,*) i
-          P%zbins(i) = Ini_Read_Double('bin_redshift_'//trim(adjustl(binnum)))
-          P%qbins(i) = Ini_Read_Double('bin_q_'//trim(adjustl(binnum)),0._dl)
-       end do
-       if (P%zbins(P%numvoidbins).gt.P%endred) then
-          write(*,*) 'WARNING!!!'
-          write(*,*) 'final redshift for ODE (',P%endred,') is lower than last bin margin ',P%zbins(P%numvoidbins)
-          write(*,*) 'You need final redshift to be higher. Fix this and re-run the code. '
-          stop
-       end if
-    else
-       write(*,*) 'ONLY BINNED COUPLING IMPLEMENTED AT THE MOMENT'
-       write(*,*) 'PLEASE WAIT FOR MORE FANCY STUFF!'
+    P%numvoidbins = Ini_Read_Int('num_bins', 1) !NH modified to include correlation length 
+
+    do i=1,P%numvoidbins
+       write(binnum,*) i
+       P%zbins(i) = Ini_Read_Double('bin_redshift_'//trim(adjustl(binnum)))
+       P%qbins(i) = Ini_Read_Double('bin_q_'//trim(adjustl(binnum)),0._dl)
+    end do
+    if (P%zbins(P%numvoidbins).gt.P%endred) then
+       write(*,*) 'WARNING!!!'
+       write(*,*) 'final redshift for ODE (',P%endred,') is lower than last bin margin ',P%zbins(P%numvoidbins)
+       write(*,*) 'You need final redshift to be higher. Fix this and re-run the code. '
+       stop
     end if
+
+    if (P%void_model.eq.2) P%smoothfactor= Ini_Read_Double('smooth_factor',10._dl)
+    if ((P%void_model.eq.3).or.(P%void_model.eq.4)) P%corrlen = Ini_Read_Double('correlation_length',1._dl)
+    if (P%void_model.gt.4) then
+        write(*,*) 'ONLY BINNED COUPLING AND GP IMPLEMENTED AT THE MOMENT'
+        write(*,*) 'PLEASE WAIT FOR MORE FANCY STUFF!'
+    end if
+
+
+   !MMmod: reading specific parameters for different coupling models
+   ! if ((P%void_model.eq.1).or.(P%void_model.eq.2)) then
+   !    P%numvoidbins = Ini_Read_Int('num_bins',1)
+   !    if (P%void_model.eq.2) P%smoothfactor= Ini_Read_Double('smooth_factor',10._dl) !smooth factor not needed for theta binning
+   !    do i=1,P%numvoidbins
+   !       write(binnum,*) i
+   !       P%zbins(i) = Ini_Read_Double('bin_redshift_'//trim(adjustl(binnum)))
+   !       P%qbins(i) = Ini_Read_Double('bin_q_'//trim(adjustl(binnum)),0._dl)
+   !    end do
+   !    if (P%zbins(P%numvoidbins).gt.P%endred) then
+   !       write(*,*) 'WARNING!!!'
+   !      write(*,*) 'final redshift for ODE (',P%endred,') is lower than last bin margin ',P%zbins(P%numvoidbins)
+   !       write(*,*) 'You need final redshift to be higher. Fix this and re-run the code. '
+   !       stop
+   !    end if
+   ! else
+   !    write(*,*) 'ONLY BINNED COUPLING IMPLEMENTED AT THE MOMENT'
+   !    write(*,*) 'PLEASE WAIT FOR MORE FANCY STUFF!'
+   ! end if
 
 
 

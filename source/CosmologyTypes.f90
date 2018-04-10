@@ -119,7 +119,7 @@
         ! integer void_n ! number of bins
         real(mcp) void_qV(n_max)
         real(mcp) void_redshift(n_max)
-        real(mcp) ODEsteps, endred, void_model, smoothfactor
+        real(mcp) ODEsteps, endred, void_model, smoothfactor, corrlen !NH added correlation length
         real(mcp) zre, zre_delta, nufrac
         real(mcp) h, H0, tau
         real(mcp) w, wa
@@ -127,6 +127,7 @@
         real(mcp) YHe, nnu, iso_cdm_correlated, ALens, Alensf, fdm !fdm is dark matter annihilation, eg,. 0910.3663
         real(mcp) :: omnuh2_sterile = 0._mcp  !note omnhu2 is the sum of this + standard neutrinos
         real(mcp) :: sum_mnu_standard
+        real(mcp) :: thetaCMB !NH added to use as a derived parameter
         real(mcp) reserved(5)
     end Type CMBParams
 

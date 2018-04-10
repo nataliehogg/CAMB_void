@@ -1,3 +1,5 @@
+!NH this file contains the switch from theta to H0 as originally implemented by M Martinelli
+
     !Default parameterization using theta = r_s/D_a instead of H_0, and tau instead of z_re
     !and log(A_s) instead of A_s
     !Less general, but should give better performance
@@ -74,7 +76,7 @@
 
     call Ini%Read('number_of_bins',CosmoSettings%void_n)
 
-    call this%SetTheoryParameterNumbers(22+2*CosmoSettings%void_n,last_power_index) !NH increased no. of params
+    call this%SetTheoryParameterNumbers(23+2*CosmoSettings%void_n,last_power_index) !NH increased no. of params to 23
 
     end subroutine TP_Init
 
@@ -132,33 +134,40 @@
             call this%TCosmologyParameterization%ParamArrayToTheoryParams(Params, CMB)
 
             error = 0   !JD to prevent stops when using bbn_consistency or m_sterile
-            DA = Params(3)/100
-            try_b = this%H0_min
+            ! DA = Params(3)/100
+            ! try_b = this%H0_min
+ 
+            !NH switching from theta to H0
+            try_b= this%H0_max
+ 
             call SetForH(Params,CMB,try_b, .true.,error)  !JD for bbn related errors
-            if(error/=0)then
+            if (error/=0) then
                 cmb%H0=0
                 return
             end if
-            D_b = CosmoCalc%CMBToTheta(CMB)
-            try_t = this%H0_max
-            call SetForH(Params,CMB,try_t, .false.)
-            D_t = CosmoCalc%CMBToTheta(CMB)
-            if (DA < D_b .or. DA > D_t) then
-                if (Feedback>1) write(*,*) instance, 'Out of range finding H0: ', real(Params(3))
-                cmb%H0=0 !Reject it
-            else
-                lasttry = -1
-                do
-                    call SetForH(Params,CMB,(try_b+try_t)/2, .false.)
-                    D_try = CosmoCalc%CMBToTheta(CMB)
-                    if (D_try < DA) then
-                        try_b = (try_b+try_t)/2
-                    else
-                        try_t = (try_b+try_t)/2
-                    end if
-                    if (abs(D_try - lasttry)< 1e-7) exit
-                    lasttry = D_try
-                end do
+           
+           !NH theta to H0 mod
+
+           ! D_b = CosmoCalc%CMBToTheta(CMB)
+           ! try_t = this%H0_max
+           ! call SetForH(Params,CMB,try_t, .false.)
+           ! D_t = CosmoCalc%CMBToTheta(CMB)
+           ! if (DA < D_b .or. DA > D_t) then
+           !     if (Feedback>1) write(*,*) instance, 'Out of range finding H0: ', real(Params(3))
+           !     cmb%H0=0 !Reject it
+           !  else
+           !     lasttry = -1
+           !     do
+           !         call SetForH(Params,CMB,(try_b+try_t)/2, .false.)
+           !         D_try = CosmoCalc%CMBToTheta(CMB)
+           !        if (D_try < DA) then
+           !             try_b = (try_b+try_t)/2
+           !         else
+           !             try_t = (try_b+try_t)/2
+           !         end if
+           !         if (abs(D_try - lasttry)< 1e-7) exit
+           !         lasttry = D_try
+           !     end do
 
                 !!call InitCAMB(CMB,error)
                 if (CMB%tau==0._mcp) then
@@ -167,9 +176,15 @@
                     CMB%zre = CosmoCalc%GetZreFromTau(CMB, CMB%tau)
                 end if
 
-                LastCMB(cache) = CMB
-                cache = mod(cache,ncache)+1
-            end if
+              !  LastCMB(cache) = CMB
+              !  cache = mod(cache,ncache)+1
+              !  end if
+
+        !NH computing theta as derived, will be passed to derived(1) in place of H0
+        CMB%thetaCMB = CosmoCalc%CMBToTheta(CMB)*100
+        LastCMB(cache) =CMB
+        cache = mod(cache, ncache)+1
+
         end select
         class default
         call MpiStop('CosmologyParameterizations: Calculator is not TCosmologyCalculator')
@@ -208,7 +223,9 @@
 
         call this%ParamArrayToTheoryParams(P,CMB)
 
-        derived(1) = CMB%H0
+        !NH gets theta as derived instead of H0
+        ! derived(1) = CMB%H0
+        derived(1) = CMB%thetaCMB
         derived(2) = CMB%omv
         derived(3) = CMB%omdm+CMB%omb
         derived(4) = CMB%omdmh2 + CMB%ombh2
@@ -284,6 +301,7 @@
     end subroutine SetFast
 
     subroutine SetForH(Params,CMB,H0, firsttime,error)
+    !NH it now reads H0 instead of theta
     use bbn
     real(mcp) Params(num_Params)
     logical, intent(in) :: firsttime
@@ -296,6 +314,7 @@
     if (firsttime) then
         CMB%reserved = 0
         CMB%ombh2 = Params(1)
+        CMB%H0 = Params(3)
         CMB%tau = params(4) !tau, set zre later
         CMB%Omk = Params(5)
         CMB%w = Params(8)
@@ -340,10 +359,12 @@
         CMB%ODEsteps = Params(20)
         CMB%void_model =Params(21)
         CMB%smoothfactor = Params(22)
+        
+        CMB%corrlen = Params(23) !NH added correlation length
 
         do j =1,CosmoSettings%void_n
-          CMB%void_qV(j) = Params(22+j)
-          CMB%void_redshift(j) =Params(22+CosmoSettings%void_n+j)
+          CMB%void_qV(j) = Params(23+j)
+          CMB%void_redshift(j) =Params(23+CosmoSettings%void_n+j)
         end do
 
 

@@ -1,0 +1,18 @@
+
+cosmomc:72506 terminated with signal 11 at PC=685947 SP=7fffd8893770.  Backtrace:
+./cosmomc[0x685947]
+./cosmomc[0x5da8e7]
+./cosmomc[0x666ad0]
+./cosmomc[0x4ff10a]
+./cosmomc[0x5ad047]
+./cosmomc[0x5b2100]
+./cosmomc[0x5b2412]
+./cosmomc[0x5b0109]
+./cosmomc[0x4ceb2b]
+./cosmomc[0x4cfe5f]
+./cosmomc[0x4cefb9]
+./cosmomc[0x4e83f9]
+./cosmomc[0x5ba30a]
+./cosmomc[0x40c00e]
+/lib64/libc.so.6(__libc_start_main+0xfd)[0x389461ed5d]
+./cosmomc[0x40bf19]
