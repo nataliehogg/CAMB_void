@@ -216,7 +216,8 @@
         if (Cphil3(10) > 1e-7) then
             write (*,*) 'You need to normalize realistically to use lensing.'
             write (*,*) 'see http://cosmocoffee.info/viewtopic.php?t=94'
-            call MpiStop()
+            ! call MpiStop()
+            stop
         end if
         if (lmax > CP%Max_l) then
             l=CP%Max_l
@@ -757,7 +758,8 @@
     if (RR(1) > 1e-5) then
         write (*,*) 'You need to normalize realistically to use lensing.'
         write (*,*) 'see http://cosmocoffee.info/viewtopic.php?t=94'
-        call MpiStop()
+        ! call MpiStop()
+        stop
     end if
     if (maxl > lmax_donelnfa) then
         !Get ln factorials
