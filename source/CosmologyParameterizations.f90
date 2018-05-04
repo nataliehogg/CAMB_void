@@ -73,9 +73,9 @@
     !set number of hard parameters, number of initial power spectrum parameters
 
     !VOID------------------------------------
-    call Ini%Read('number_of_bins',CosmoSettings%void_n)
+!    call Ini%Read('number_of_bins',CosmoSettings%void_n)
 
-    call this%SetTheoryParameterNumbers(21+2*CosmoSettings%void_n,last_power_index) !NH increased no. of params MMmod: +1 for corrlen
+    call this%SetTheoryParameterNumbers(21+2*CosmoSettings%void_n+1,last_power_index) !NH increased no. of params MMmod: +1 for corrlen +1 for fiducial and prior likelihood
     !----------------------------------------
     end subroutine TP_Init
 
@@ -329,6 +329,7 @@
           CMB%void_redshift(j) =Params(21+CosmoSettings%void_n+j)
         end do
 
+        CMB%void_fiducial = Params(21+2*CosmoSettings%void_n+1)
 
         call SetFast(Params,CMB)
     end if

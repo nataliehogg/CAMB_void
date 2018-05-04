@@ -16,6 +16,7 @@
     use szcounts !Anna
     use wl
     use ElementAbundances
+    use corrprior !MMmod: VOID
     class(TSettingIni), intent(in) :: Ini
 
     CosmoSettings%get_sigma8 = Ini%Read_Logical('get_sigma8',.false.)
@@ -37,6 +38,9 @@
     call SZLikelihood_Add(DataLikelihoods, Ini) !Anna
 
     call WLLikelihood_Add(DataLikelihoods, Ini)
+
+    CosmoSettings%void_n = Ini%Read_Int('number_of_bins')
+    call CPLikelihood_Add(DataLikelihoods, CosmoSettings%void_n, Ini) !MMmod: void
 
     end subroutine SetDataLikelihoods
 

@@ -95,9 +95,9 @@
 
     P%numvoidbins = CosmoSettings%void_n
     do i=1, CosmoSettings%void_n
-    P%zbins(i) = CMB%void_redshift(i)
-    P%qbins(i) = CMB%void_qV(i)
-  end do
+       P%zbins(i) = CMB%void_redshift(i)
+       P%qbins(i) = CMB%void_qV(i)
+    end do
 
   P%void_model = CMB%void_model
   P%endred = CMB%endred

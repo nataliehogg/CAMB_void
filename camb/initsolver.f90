@@ -24,7 +24,7 @@ integer, parameter                 :: theta_void=1, smooth_void=2 !possible opti
 integer, parameter                 :: GP_void=3, baseline_void=4  !possible options for q(z) gaussian process reconstruction
 integer, parameter                 :: exact_void=0                !exact solution of the binned equation (only for single bin at the moment)
 
-logical                            :: debugging = .true.         !if T prints some files to check solver
+logical                            :: debugging = .false.         !if T prints some files to check solver
 
 contains
 

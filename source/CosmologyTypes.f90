@@ -112,10 +112,13 @@
         !Now remaining (non-independent) parameters
         real(mcp) omb, omc, omv, omnu, omk, omdm
         real(mcp) ombh2, omch2, omnuh2, omdmh2
-        ! integer void_n ! number of bins
+        !MMmod: VOID--------------------
+!         integer void_n ! number of bins
         real(mcp) void_qV(n_max)
         real(mcp) void_redshift(n_max)
+        real(mcp) void_fiducial
         real(mcp) ODEsteps,endred, void_model, smoothfactor, corrlen
+        !-------------------------------
         real(mcp) zre, zre_delta, nufrac
         real(mcp) h, H0, tau
         real(mcp) w, wa
