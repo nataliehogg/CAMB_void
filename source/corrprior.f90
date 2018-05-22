@@ -199,8 +199,8 @@ module corrprior
         this%z_bins(3) = Ini%Read_Double('param[void_z1]')
         this%z_bins(4) = Ini%Read_Double('param[void_z2]')
         this%z_bins(5) = Ini%Read_Double('param[void_z3]')
-        this%alpha_c = Ini%Read_Double('param[alpha_c]')
-        this%sigma_alpha = Ini%Read_Double('param[sigma_alpha]')
+        this%alpha_c = Ini%Read_Double('alpha_c')
+        this%sigma_alpha = Ini%Read_Double('sigma_alpha')
         do i = 1, this%nbins
           Delta(i) = 1./(1.+this%z_bins(i)) - 1./(1.+this%z_bins(i+1))
           scale_factor(i+1) = 1./(1.+this%z_bins(i+1))
