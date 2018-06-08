@@ -126,20 +126,16 @@
     allocate(covxipmtemp(3,sizcovishsq))
 
     !!!Reading in source distributions
-!    open(7,file='nz_z1_kids_binned.dat') !mean z
-    open(7,file='nz_z1_kids_binned_hendrik.dat') !bootstrap z
+    open(7,file='data/KIDS/nz_z1_kids_binned_hendrik.dat') !bootstrap z
     READ (7,*) this%arraysjorig1
     close(7)
-!    open(7,file='nz_z2_kids_binned.dat') !mean z
-    open(7,file='nz_z2_kids_binned_hendrik.dat') !bootstrap z
+    open(7,file='data/KIDS/nz_z2_kids_binned_hendrik.dat') !bootstrap z
     READ (7,*) this%arraysjorig2
     close(7)
-!    open(7,file='nz_z3_kids_binned.dat') !mean z
-    open(7,file='nz_z3_kids_binned_hendrik.dat') !bootstrap z
+    open(7,file='data/KIDS/nz_z3_kids_binned_hendrik.dat') !bootstrap z
     READ (7,*) this%arraysjorig3
     close(7)
-!    open(7,file='nz_z4_kids_binned.dat') !mean z
-    open(7,file='nz_z4_kids_binned_hendrik.dat') !bootstrap z
+    open(7,file='data/KIDS/nz_z4_kids_binned_hendrik.dat') !bootstrap z
     READ (7,*) this%arraysjorig4
     close(7)
 
@@ -154,16 +150,16 @@
 
     !!!Reading in measurements
 !    if(setscenario == 0) then !do not use this option
-!        open(7,file='xipm_filename.dat')
+!        open(7,file='data/KIDS/xipm_filename.dat')
 !    end if
     if(setscenario == 1) then
       if (this%use_nl) then
-        open(7,file='xipmcut_kids_blind1.dat') !USED
+        open(7,file='data/KIDS/xipmcut_kids_blind1.dat') !USED
       else
-        open(7,file='xipmcut_kids_blind1_largecut.dat') !USED
+        open(7,file='data/KIDS/xipmcut_kids_blind1_largecut.dat') !USED
       end if
-!        open(7,file='xipmcut_kids_blind2.dat')
-!        open(7,file='xipmcut_kids_blind3.dat')
+!        open(7,file='data/KIDS/xipmcut_kids_blind2.dat')
+!        open(7,file='data/KIDS/xipmcut_kids_blind3.dat')
     end if
     READ (7,*) xipmtemp
     close(7)
@@ -171,13 +167,13 @@
 
     !!!Masking file
     if(setscenario == 0) then
-        open(7,file='xipm_kids4tom_selectsjnocut.dat') !USED
+        open(7,file='data/KIDS/xipm_kids4tom_selectsjnocut.dat') !USED
     end if
     if(setscenario == 1) then
       if (this%use_nl) then
-        open(7,file='xipm_kids4tom_selectsj.dat') !USED
+        open(7,file='data/KIDS/xipm_kids4tom_selectsj.dat') !USED
       else
-        open(7,file='xipm_kids4tom_selectsj_largecut.dat') ! SP: USED
+        open(7,file='data/KIDS/xipm_kids4tom_selectsj_largecut.dat') ! SP: USED
       end if
     end if
     READ (7,*) masktemp
@@ -190,9 +186,9 @@
     !end if
     if(setscenario == 1) then
       if (this%use_nl) then
-        open(7,file='xipmcutcov_kids_analytic_inc_m_blind1.dat') !USED
+        open(7,file='data/KIDS/xipmcutcov_kids_analytic_inc_m_blind1.dat') !USED
       else
-        open(7,file='xipmcutcov_kids_analytic_inc_m_blind1_largecut.dat') ! SP: USED
+        open(7,file='data/KIDS/xipmcutcov_kids_analytic_inc_m_blind1_largecut.dat') ! SP: USED
       end if
  !       open(7,file='xipmcutcov_kids_analytic_inc_m_blind2.dat')
  !       open(7,file='xipmcutcov_kids_analytic_inc_m_blind3.dat')

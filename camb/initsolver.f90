@@ -123,7 +123,7 @@ end subroutine getrhos
 
 
 
-subroutine deinterface(CP,error)
+subroutine deinterface(CP)
       Type(CAMBparams) CP
       integer, parameter      :: n = 1
       real, dimension(0:n)    :: x                              !dependent variables: rho_m, rho_v

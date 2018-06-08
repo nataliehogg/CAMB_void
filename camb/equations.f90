@@ -2041,10 +2041,9 @@
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
     if ((w_lam==-1._dl).and.(CP%void_model.eq.0)) then !VOID: change dependence from scale factor with Eqs. (22, 23)
-        grhov_t=grhov*a2
+       grhov_t=grhov*a2
     else
-       grhov_t = grhov*a2!**(-CP%qV+2)
-      !grhov_t = grhov_t*a2
+       grhov_t = grhov_t*a2
     end if
 
 
@@ -2618,11 +2617,11 @@
     end if
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
-!    if ((w_lam==-1._dl).and.(CP%void_model.eq.0)) then
+    if ((w_lam==-1._dl).and.(CP%void_model.eq.0)) then
        grhov_t = grhov*a2
-!    else
-!       grhov_t=grhov_t*a2
-!    end if
+    else
+       grhov_t=grhov_t*a2
+    end if
 
     grho=grhob_t+grhoc_t+grhor_t+grhog_t+grhov_t
 
