@@ -1,7 +1,7 @@
 !#############################################################
 !#This module computes the main equations for the interactive#
 !#void model.                                                #
-!#Current version updated on 06/04/2018                      #
+!#Current version updated on 15/03/2018                      #
 !#############################################################
 
 module initsolver
@@ -18,11 +18,13 @@ integer                            :: nsteps    = 10000           !number of int
 real(dl), dimension(:),allocatable :: z_ode, solmat, solvoid      !8piG/3 * rho_m and rho_v
 real(dl), dimension(:),allocatable :: ddsolmat, ddsolvoid         !same but derivatives obtained from spline
 real(dl), dimension(:),allocatable :: GP_z, GP_q, dd_GP_q         !output arrays of GP reconstruction
+real(dl), dimension(:),allocatable :: bvoid, cvoid, dvoid         !coefficient of polynomial for interpolation
+real(dl), dimension(:),allocatable :: bmat, cmat, dmat            !coefficient of polynomial for interpolation
+real(dl), dimension(:),allocatable :: bgp, cgp, dgp               !coefficient of polynomial for interpolation
 real                               :: coupling                    !value of the coupling parameter as taken from CAMB
 integer                            :: model                       !choice of the interaction model we want to use
 integer, parameter                 :: theta_void=1, smooth_void=2 !possible options for q(z) binned reconstruction
 integer, parameter                 :: GP_void=3, baseline_void=4  !possible options for q(z) gaussian process reconstruction
-integer, parameter                 :: exact_void=0                !exact solution of the binned equation (only for single bin at the moment)
 
 logical                            :: debugging = .false.         !if T prints some files to check solver
 
@@ -78,8 +80,6 @@ integer               :: i
             Q=0._dl
          end if
          Q = -Q*rhov
-      else if (CP%void_model.eq.exact_void) then
-         Q = CP%qbins(1)
       else
          write(*,*) 'wait for it'
       end if
@@ -89,7 +89,7 @@ integer               :: i
 
 end subroutine getcoupling
 
-subroutine getrhos(a,rho_m,rho_v)
+subroutine getrhos(a,rho_m,rho_v,error)
 !this subroutine gets the output of the differential equation
 !interpolates it at the requested redshift
 !outputs 8piG * rho_i
@@ -99,6 +99,7 @@ real(dl), intent(out)     :: rho_m
 real(dl), intent(out)     :: rho_v
 real(dl)                  :: z
 real(dl), parameter       :: azero = 10**(-8.)
+integer, optional :: error !Zero if OK
 
 if (a.gt.azero) then
    z = -1.+1./a
@@ -113,13 +114,19 @@ else
    rho_m = solmat(nsteps) * ( (1+z)/(1+z_ode(nsteps)) )**3.
    rho_v = solvoid(nsteps)
 end if
-!write(321,*) z, rho_m/(rho_m+rho_v), rho_v/(rho_m+rho_v)
+
+if ((rho_m.le.0._dl).or.(rho_v.le.0._dl)) then
+   global_error_flag         = 1
+   global_error_message      = 'INITSOLVER: negative densities'
+   if (present(error)) error = global_error_flag
+   return
+end if
 
 end subroutine getrhos
 
 
 
-subroutine deinterface(CP,error)
+subroutine deinterface(CP)
       Type(CAMBparams) CP
       integer, parameter      :: n = 1
       real, dimension(0:n)    :: x                              !dependent variables: rho_m, rho_v
@@ -143,14 +150,12 @@ subroutine deinterface(CP,error)
       integer :: status
       integer :: getpid
       integer :: system
-      integer, optional :: error
 
 
       !initializing global ODE solver parameters from CAMB
       initial_z = 0._dl
       final_z   = CP%endred
       nsteps    = CP%numstepsODE
-      error     = 0
 
       !allocating arrays
       if (allocated(z_ode) .eqv. .false.) allocate(z_ode(nsteps+1), solmat(nsteps+1), solvoid(nsteps+1))
@@ -158,6 +163,9 @@ subroutine deinterface(CP,error)
       if (allocated(GP_z) .eqv. .false.) allocate(GP_z(nsteps+1))
       if (allocated(GP_q) .eqv. .false.) allocate(GP_q(nsteps+1))
       if (allocated(dd_GP_q) .eqv. .false.) allocate(dd_GP_q(nsteps+1))
+      if (allocated(bmat) .eqv. .false.) allocate(bmat(nsteps+1), cmat(nsteps+1), dmat(nsteps+1))
+      if (allocated(bvoid) .eqv. .false.) allocate(bvoid(nsteps+1), cvoid(nsteps+1), dvoid(nsteps+1))
+      if (allocated(bgp) .eqv. .false.) allocate(bgp(nsteps+1), cgp(nsteps+1), dgp(nsteps+1))
 
       if (debugging) then
          if ((CP%void_model.eq.theta_void).or.(CP%void_model.eq.smooth_void)) then
@@ -173,19 +181,10 @@ subroutine deinterface(CP,error)
       rhoc_init = 3*(1000*CP%H0/c)**2.*CP%omegac               !8 pi G * rho_c^0
       rhov_init = 3*(1000*CP%H0/c)**2.*CP%omegav               !8 pi G * rho_V^0
       x = (/rhoc_init, rhov_init/)                             !initial conditions
-      h = (final_z - initial_z)/nsteps                         !step size for runge-kutta
-
+      h = (log(1/(1+final_z)) - log(1/(1+initial_z)))/nsteps
 
 
       !Gaussian process interface
-   if (CP%void_model.eq.exact_void) then
-      do i=1,nsteps+1
-         z_ode(i)   = initial_z+(i-1)*h
-         solvoid(i) = rhov_init*(1+z_ode(i))**CP%qbins(1)
-         solmat(i)  = rhoc_init*(1+z_ode(i))**3. + rhov_init*(CP%qbins(1)/(CP%qbins(1)-3))*((1+z_ode(i))**3.-(1+z_ode(i))**CP%qbins(1))
-      end do
-      
-   else
       if ((CP%void_model.eq.GP_void).or.(CP%void_model.eq.baseline_void)) then
 
          !Setting GP redshift to median redshift of each bin
@@ -251,7 +250,6 @@ subroutine deinterface(CP,error)
          !-----------------------------------------------------------
       end if
 
-
       if (debugging) then
          write(*,*) '---------------------------------------------'
          write(*,*) 'STARTING DIFFERENTIAL EQUATION FOR COUPLED DE'
@@ -268,32 +266,10 @@ subroutine deinterface(CP,error)
       if (debugging) write(*,*) 'Started solving ODE'
 
       call rk4sys(CP,n,h,x)
-   end if
 
       if (debugging) write(*,*) 'solution done'
 
-!do i=1,CP%numstepsODE
-!   write(123,*) z_ode(i),solmat(i)/(solmat(i)+solvoid(i)),solvoid(i)/(solmat(i)+solvoid(i))
-!end do
 
-      !TEST FOR NEGATIVE DENSITITES----------------------------------
-write(*,*) 'doing overall sign test'
-      if (any(solmat.le.0._dl).or.any(solvoid.le.0._dl)) then
-         do i=1,nsteps
-            if (debugging) then
-               if ((solmat(i).le.0._dl).or.(solvoid(i).le.0._dl)) then
-                  write(0,*) i, solmat(i), solvoid(i)
-               end if
-            end if
-            write(456,*) z_ode(i),solvoid(i),solmat(i)
-         end do
-         global_error_flag         = 1
-         global_error_message      = 'INITSOLVER: negative densities'
-         write(*,*) global_error_message
-         if (present(error)) error = global_error_flag
-         return
-      end if
-      !--------------------------------------------------------------
 
       !getting everything ready to interpolate
       call spline(z_ode,solmat,nsteps,1d30,1d30,ddsolmat)
@@ -301,7 +277,7 @@ write(*,*) 'doing overall sign test'
 
 
       if (debugging) then
-         first_a_debug = 1.e-1
+         first_a_debug = 1.e-4
          if (CP%void_model.eq.theta_void) then
             open(42, file='solutions_thetabin.dat')
             open(666,file='binned_coupling_thetabin.dat')
@@ -314,15 +290,11 @@ write(*,*) 'doing overall sign test'
          else if (CP%void_model.eq.baseline_void) then
             open(42, file='solutions_GPbaseline.dat')
             open(666,file='binned_coupling_GPbaseline.dat')
-         else if (CP%void_model.eq.exact_void) then
-            open(42, file='solutions_exact.dat')
-            open(666,file='binned_coupling_exact.dat')
          end if
          do k=1,nsteps
             debug_a = first_a_debug+k*(1.-first_a_debug)/nsteps
             call getrhos(debug_a,debug_c, debug_v)
             write(42,*) debug_a, debug_c/(debug_c+debug_v), debug_v/(debug_c+debug_v)
-            !write(42,*) debug_a, debug_c, debug_v
             call getcoupling(CP,-1+1/debug_a,real(debug_v),debug_q)
             write(666,*) -1+1/debug_a, -debug_q/debug_v
          end do
@@ -337,8 +309,9 @@ write(*,*) 'doing overall sign test'
         write(*,'("Om_Lambda            = ",f9.6)') CP%omegav
         write(*,'("Om_K                 = ",f9.6)') CP%omegak
         write(*,'("Om_m (1-Om_K-Om_L)   = ",f9.6)') 1-CP%omegak-CP%omegav
-!        write(*,'("100 theta (CosmoMC)  = ",f9.6)') 100*CosmomcTheta()
+        write(*,'("100 theta (CosmoMC)  = ",f9.6)') 100*CosmomcTheta()
       end if
+
 end subroutine deinterface
 
 
@@ -366,18 +339,20 @@ subroutine xpsys(CP,n,k,h,x,f)
       real :: h      !stepsize
       real :: Hubble !Hubble parameter
       real(dl) :: Q      !interaction term
-      real(dl) :: redshift
+      real(dl) :: redshift, scalefac
 
       !Gets redshift for this step and the coupling
-      redshift = initial_z + k*h
+!      redshift = initial_z + k*h
+      scalefac = log(1/(1+initial_z)) + k*h
+      redshift = -1+1/exp(scalefac)
       call getcoupling(CP,redshift,x(1),Q)
 
       !These are the actual derivatives
       !x'(1) = f(1)
       !x'(2) = f(2)
 
-      f(0) = (Q+3*x(0))/(1+redshift)
-      f(1) = -Q/(1+redshift)
+      f(0) = -(Q+3*x(0))!/(1+redshift)
+      f(1) = Q!/(1+redshift)
 
 end subroutine xpsys
 
@@ -413,7 +388,7 @@ in4:    do i = 0,n
         end do in4
 !        print *, k, x
         !storing functions at each step
-        z_ode(k+1) = initial_z + k*h
+        z_ode(k+1) = -1+1/exp(log(1/(1+initial_z)) + k*h)
         solmat(k+1)  = x(0)
         solvoid(k+1) = x(1)
       end do out
@@ -444,44 +419,5 @@ end subroutine rk4sys
         ((a**3-a)*y2a(klo)+(b**3-b)*y2a(khi))*(h**2)/6.d0
     END SUBROUTINE extrasplint
     !--------------------------------------------------------------------
-
-
-!subroutine getfunc(zbin,fbin,z0,f0,fder0,z,outfunc,outder)
-
-!real(dl), dimension(nbin), intent(in) :: fbin
-!real(dl), dimension(nbin), intent(in) :: zbin
-!real(dl), dimension(nbin-1) :: fderbin
-!real(dl), dimension(nbin-1) :: zderbin
-!real(dl), intent(in) :: z
-!real(dl), intent(in) :: z0
-!real(dl), intent(in) :: f0
-!real(dl), intent(in) :: fder0
-!real(dl), intent(out) :: outfunc, outder
-
-!integer i,j,k
-
-
-!if (z.lt.zbin(1)) then
-
-!   outfunc = fbin(1)
-!   outder = 0.d0!fderbin(1)
-
-!else if (z.gt.zbin(nbin)) then
-
-!   outfunc = fbin(nbin)
-!   outder = 0.d0!fderbin(nbin-1)
-
-!else
-
-!   outfunc = (fbin(1)+f0)/2 + (fbin(1)-f0)/2 * tanh(((z-zbin(1))/(zbin(2)-zbin(1)))*h)
-
-!   do i=1,nbin-1
-!      outfunc = outfunc + (fbin(i+1)-fbin(i))/2 * (1+tanh(((z-zbin(i+1))/(zbin(i+1)-zbin(i)))*h))
-!   end do
-
-
-!end if
-
-!end subroutine getfun
 
 end module initsolver

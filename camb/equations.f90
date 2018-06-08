@@ -74,12 +74,12 @@
     !It is called before first call to dtauda, but after
     !massive neutrinos are initialized and after GetOmegak
     integer :: error
-    error = 0
 
-    write(*,*) 'pre error=',error
-    call deinterface(CP,error)
-    write(*,*) 'post error=',error
-!    if (error.ne.0) call MpiStop()
+    if (CP%void_model.gt.0) then
+       call deinterface(CP)
+    else
+       write(*,*) 'Ignoring coupling, working with LCDM'
+    end if
 
     end  subroutine init_background
 
@@ -108,14 +108,14 @@
     !  8*pi*G*rho*a**4
     grhoa2=grhok*a2+grhob*a+grhog+grhornomass    ! I removed grhoc from this sum as we need to add the effect of q within the if statement
 
-    if (w_lam == -1._dl) then ! we set w != -1 in params.ini to avoid this track
-        grhoa2=grhoa2+grhov*a2**2+grhoc*a
+    if ((w_lam == -1._dl).and.(CP%void_model.eq.0)) then ! we set w != -1 in params.ini to avoid this track
+       grhoa2=grhoa2+grhov*a2**2+grhoc*a
     else
 
     !MMmod: getting densities from solver
-        call getrhos(a,grhoc_t,grhov_t)
-        if (global_error_flag.ne.0) return
-        grhoa2 = grhoa2 + grhov_t*a2*a2 + grhoc_t*a2*a2
+       call getrhos(a,grhoc_t,grhov_t)
+       if (global_error_flag.ne.0) return
+       grhoa2 = grhoa2 + grhov_t*a2*a2 + grhoc_t*a2*a2
     end if
 
     if (CP%Num_Nu_massive /= 0) then
@@ -1275,15 +1275,19 @@
     !  Compute expansion rate from: grho 8*pi*rho*a**2
 
     grhob_t=grhob/a
-    !MMmod: GETTING DENSITIES FROM SOLVER
-    call getrhos(a,grhoc_t,grhov_t)
-    grhoc_t = grhoc_t*a2
-    !------------------------------------
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
-    !MMmod-------------------------------
-    grhov_t = grhov_t*a2
-    !------------------------------------
+
+
+    !MMmod: GETTING DENSITIES FROM SOLVER
+    if (CP%void_model.gt.0) then
+       call getrhos(a,grhoc_t,grhov_t)
+       grhoc_t = grhoc_t*a2
+       grhov_t = grhov_t*a2
+    else
+       grhoc_t=grhoc/a
+       grhov_t=grhov*a**(-1-3*w_lam)
+    end if
     grho=grhob_t+grhoc_t+grhor_t+grhog_t+grhov_t
     ! gpres=(grhog_t+grhor_t)/3+grhov_t*(-CP%qV) !VOID: change dependence from scale factor with Eqs. (22, 23) (changed w_lam for -q)
     gpres=(grhog_t+grhor_t)/3-grhov_t !VOID: change dependence from scale factor with Eqs. (22, 23) (changed w_lam for -q)
@@ -2030,15 +2034,19 @@
 
     grhob_t=grhob/a
     !MMmod: getting densities from solver
-    call getrhos(a,grhoc_t,grhov_t)
-    grhoc_t = grhoc_t*a2
+    if (CP%void_model.gt.0) then
+       call getrhos(a,grhoc_t,grhov_t)
+       grhoc_t = grhoc_t*a2
+    else
+       grhoc_t=grhoc/a 
+    end if
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
-    if (w_lam==-1._dl) then !VOID: change dependence from scale factor with Eqs. (22, 23)
+    if ((w_lam==-1._dl).and.(CP%void_model.eq.0)) then !VOID: change dependence from scale factor with Eqs. (22, 23)
         grhov_t=grhov*a2
     else
-      ! grhov_t = grhov*a**(-CP%qV+2)
-      grhov_t = grhov_t*a2
+       grhov_t = grhov*a2!**(-CP%qV+2)
+      !grhov_t = grhov_t*a2
     end if
 
 
@@ -2175,9 +2183,12 @@
     !use Eqs.(13,15)
 
     !MMmod: getting coupling from the solver
-    call getcoupling(CP,-1+1/a,real(grhov_t/a2),voidQ)
-
-    clxcdot=-k*z +voidQ*adotoa/(grhoc_t/a2)*clxc  !SPmod
+    if (CP%void_model.gt.0) then
+       call getcoupling(CP,-1+1/a,real(grhov_t/a2),voidQ)
+       clxcdot=-k*z +voidQ*adotoa/(grhoc_t/a2)*clxc  !SPmod
+    else
+       clxcdot=-k*z
+    end if
     ayprime(3)=clxcdot
 
     !  Baryon equation of motion.
@@ -2601,16 +2612,19 @@
     ! Also calculate gpres: 8*pi*p*a**2
     grhob_t=grhob/a
     !MMmod: getting densities from solver
-    call getrhos(a,grhoc_t,grhov_t)
-    grhoc_t=grhoc_t*a2
+    if (CP%void_model.gt.0) then
+       call getrhos(a,grhoc_t,grhov_t)
+       grhoc_t=grhoc_t*a2
+    else
+       grhoc_t=grhoc/a
+    end if
     grhor_t=grhornomass/a2
     grhog_t=grhog/a2
-    if (w_lam==-1._dl) then!VOID: change dependence from scale factor with Eqs. (22, 23)
-      ! grhov_t = grhov*a**(-CP%qV+2)
-      grhov_t = grhov*a2
-    else
-        grhov_t=grhov_t*a2
-    end if
+!    if ((w_lam==-1._dl).and.(CP%void_model.eq.0)) then
+       grhov_t = grhov*a2
+!    else
+!       grhov_t=grhov_t*a2
+!    end if
 
     grho=grhob_t+grhoc_t+grhor_t+grhog_t+grhov_t
 
