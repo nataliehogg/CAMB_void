@@ -1,6 +1,6 @@
 import os, sys
 here = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.normpath(os.path.join(here,'./python/')))
+sys.path.insert(0, os.path.normpath(os.path.join(here,'../python/')))
 from matplotlib.backends.backend_pgf import FigureCanvasPgf
 from matplotlib.backend_bases import register_backend
 register_backend('pdf', FigureCanvasPgf)
