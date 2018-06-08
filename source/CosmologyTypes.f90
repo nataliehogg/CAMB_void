@@ -44,7 +44,10 @@
         integer :: lmin_store_all_cmb = 0 !>0 if you want output everything even if not used
 
         !redshifts for output of BAO background parameters
-        real(mcp) :: z_outputs(1) = [0.57_mcp]
+       !  real(mcp) :: z_outputs(1) = [0.57_mcp]
+
+
+        real(mcp) :: z_outputs(1) = [4.1_mcp] !SJ
 
         logical :: CMB_lensing = .true.
         logical :: use_lensing_potential = .false.
@@ -55,7 +58,8 @@
         logical :: use_matterpower = .false.
         logical :: use_Weylpower = .false. !power spectrum of Weyl potential for lensing
         logical :: use_sigmaR =.false. !sigma_R, e.g. for clusters
-        real(mcp) :: power_kmax = 0.8_mcp
+       ! real(mcp) :: power_kmax = 0.8_mcp
+        real(mcp) :: power_kmax =100.0d0 !SJ
         integer :: num_power_redshifts = 0
 
         !Only used in params_CMB
@@ -122,6 +126,7 @@
         real(mcp) zre, zre_delta, nufrac
         real(mcp) h, H0, tau
         real(mcp) w, wa
+        real(mcp) baryfeed, barybloat !SJ
         real(mcp) YHe, nnu, iso_cdm_correlated, ALens, Alensf, fdm !fdm is dark matter annihilation, eg,. 0910.3663
         real(mcp) :: omnuh2_sterile = 0._mcp  !note omnhu2 is the sum of this + standard neutrinos
         real(mcp) :: sum_mnu_standard

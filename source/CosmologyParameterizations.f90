@@ -1,3 +1,5 @@
+!NH this file contains the switch from theta to H0 as originally implemented by M Martinelli
+
     !Default parameterization using theta = r_s/D_a instead of H_0, and tau instead of z_re
     !and log(A_s) instead of A_s
     !Less general, but should give better performance
@@ -72,10 +74,10 @@
     this%num_derived = Names%num_derived
     !set number of hard parameters, number of initial power spectrum parameters
 
-    !VOID------------------------------------
-!    call Ini%Read('number_of_bins',CosmoSettings%void_n)
+    call Ini%Read('number_of_bins',CosmoSettings%void_n)
 
-    call this%SetTheoryParameterNumbers(21+2*CosmoSettings%void_n+1,last_power_index) !NH increased no. of params MMmod: +1 for corrlen +1 for fiducial and prior likelihood
+    call this%SetTheoryParameterNumbers(23+2*CosmoSettings%void_n+1,last_power_index) !NH increased no. of params to 23 +1 for fiducial and prior likelihood
+
     !----------------------------------------
     end subroutine TP_Init
 
@@ -137,7 +139,7 @@
 !            DA = Params(3)/100
             try_b = this%H0_max
             call SetForH(Params,CMB,try_b, .true.,error)  !JD for bbn related errors
-            if(error/=0)then
+            if (error/=0) then
                 cmb%H0=0
                 return
             end if
@@ -318,18 +320,21 @@
         CMB%ALensf = Params(15)
         CMB%fdm = Params(16)
 
-        CMB%endred = Params(17)
-        CMB%ODEsteps = Params(18)
-        CMB%void_model =Params(19)
-        CMB%smoothfactor = Params(20)
-        CMB%corrlen = Params(21)
+        CMB%baryfeed = Params(17) !SJ
+        CMB%barybloat = Params(18) !SJ
+        CMB%endred = Params(19)
+        CMB%ODEsteps = Params(20)
+        CMB%void_model =Params(21)
+        CMB%smoothfactor = Params(22)
+        
+        CMB%corrlen = Params(23) !NH added correlation length
 
         do j =1,CosmoSettings%void_n
-          CMB%void_qV(j) = Params(21+j)
-          CMB%void_redshift(j) =Params(21+CosmoSettings%void_n+j)
+          CMB%void_qV(j) = Params(23+j)
+          CMB%void_redshift(j) =Params(23+CosmoSettings%void_n+j)
         end do
 
-        CMB%void_fiducial = Params(21+2*CosmoSettings%void_n+1)
+        CMB%void_fiducial = Params(23+2*CosmoSettings%void_n+1)
 
         call SetFast(Params,CMB)
     end if

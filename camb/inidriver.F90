@@ -148,8 +148,6 @@
     end if
 
 
-
-
     P%tcmb   = Ini_Read_Double('temp_cmb',COBE_CMBTemp)
     P%yhe    = Ini_Read_Double('helium_fraction',0.24_dl)
     P%Num_Nu_massless  = Ini_Read_Double('massless_neutrinos')

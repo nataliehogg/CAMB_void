@@ -73,7 +73,6 @@
     !This is only called once per model, and is a good point to do any extra initialization.
     !It is called before first call to dtauda, but after
     !massive neutrinos are initialized and after GetOmegak
-    integer :: error
 
     if (CP%void_model.gt.0) then
        call deinterface(CP)
@@ -111,8 +110,7 @@
     if ((w_lam == -1._dl).and.(CP%void_model.eq.0)) then ! we set w != -1 in params.ini to avoid this track
        grhoa2=grhoa2+grhov*a2**2+grhoc*a
     else
-
-    !MMmod: getting densities from solver
+       !MMmod: getting densities from solver
        call getrhos(a,grhoc_t,grhov_t)
        if (global_error_flag.ne.0) return
        grhoa2 = grhoa2 + grhov_t*a2*a2 + grhoc_t*a2*a2

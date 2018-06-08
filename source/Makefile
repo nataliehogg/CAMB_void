@@ -177,6 +177,8 @@ DATAMODULES = $(PLANCKLIKEFILES) $(OUTPUT_DIR)/mpk.o $(OUTPUT_DIR)/wigglez.o \
 
 DATAMODULES += $(OUTPUT_DIR)/wl.o $(OUTPUT_DIR)/corrprior.o
 
+DATAMODULES += $(OUTPUT_DIR)/CosmicShear.o 
+
 COSMOFILES = $(OUTPUT_DIR)/CosmologyTypes.o $(OUTPUT_DIR)/CosmoTheory.o $(OUTPUT_DIR)/bbn.o $(OUTPUT_DIR)/Calculator_Cosmology.o \
 	$(OUTPUT_DIR)/CalcLike_Cosmology.o $(OUTPUT_DIR)/Likelihood_Cosmology.o $(CALCFILES) $(DATAMODULES) $(PARAMETERIZATION) $(LIKEFILES) \
 	$(OUTPUT_DIR)/CosmologyConfig.o
@@ -246,6 +248,7 @@ $(OUTPUT_DIR)/CMB.o: $(OUTPUT_DIR)/CMBlikes.o $(PLANCKLIKEFILES)
 $(OUTPUT_DIR)/bbn.o: $(OUTPUT_DIR)/settings.o $(OUTPUT_DIR)/likelihood.o $(OUTPUT_DIR)/Interpolation.o
 $(OUTPUT_DIR)/mpk.o: $(OUTPUT_DIR)/CosmoTheory.o $(OUTPUT_DIR)/Likelihood_Cosmology.o
 $(OUTPUT_DIR)/wigglez.o: $(OUTPUT_DIR)/mpk.o
+$(OUTPUT_DIR)/CosmicShear.o: $(OUTPUT_DIR)/Likelihood_Cosmology.o
 $(OUTPUT_DIR)/bao.o: $(OUTPUT_DIR)/Likelihood_Cosmology.o
 $(OUTPUT_DIR)/wl.o: $(OUTPUT_DIR)/Likelihood_Cosmology.o
 $(OUTPUT_DIR)/corrprior.o: $(OUTPUT_DIR)/Likelihood_Cosmology.o

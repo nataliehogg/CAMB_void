@@ -115,6 +115,7 @@
         !Max_l and Max_eta_k are set to the tensor variables if only tensors requested
 
         real(dl)  :: omegab, omegac, omegav, omegan
+        real(dl)  :: baryfeed, barybloat !SJ
         !Omega baryon, CDM, Lambda and massive neutrino
         real(dl)  :: H0,TCMB,yhe,Num_Nu_massless
         integer   :: Num_Nu_massive !sum of Nu_mass_numbers below
