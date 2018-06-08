@@ -1,7 +1,7 @@
 !#############################################################
 !#This module computes the main equations for the interactive#
 !#void model.                                                #
-!#Current version updated on 15/03/2018                      #
+!#Current version updated on 08/06/2018                      #
 !#############################################################
 
 module initsolver
