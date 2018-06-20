@@ -122,6 +122,7 @@
         real(mcp) void_redshift(n_max)
         real(mcp) void_fiducial
         real(mcp) ODEsteps,endred, void_model, smoothfactor, corrlen
+	integer void_mean_fiducial
         !-------------------------------
         real(mcp) zre, zre_delta, nufrac
         real(mcp) h, H0, tau

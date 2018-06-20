@@ -255,11 +255,35 @@ module corrprior
     real(mcp) CP_LnLike
     real(mcp) vec(this%nbins)
     integer i,j
+    real(mcp) void_mean
 
+    if ( CMB%void_mean_fiducial == 2 ) then !SPmod: fiducial as mean of neighbours bins
 
-    do i=1, this%nbins
-       vec(i) = CMB%void_qV(i)-CMB%void_fiducial
-    end do
+      i=1
+      void_mean = (CMB%void_qV(i) + CMB%void_qV(i+1))/2._mcp
+      vec(i) = CMB%void_qV(i)-void_mean
+
+      do i=2, this%nbins-1
+        void_mean = (CMB%void_qV(i-1) + CMB%void_qV(i) + CMB%void_qV(i+1))/3._mcp
+        vec(i) = CMB%void_qV(i)-void_mean
+      end do
+
+      i= this%nbins
+      void_mean = (2.*CMB%void_qV(i) + CMB%void_qV(i-1))/3._mcp
+      vec(i) = CMB%void_qV(i)-void_mean
+
+    else if ( CMB%void_mean_fiducial == 1 ) then !fixed fiducial
+
+      do i=1, this%nbins
+        vec(i) = CMB%void_qV(i)-CMB%void_fiducial
+      end do
+
+    else
+
+      call MpiStop(' no choice for q fiducial in correlation prior computation ')
+
+    end if
+
     if (CPdebugging) then
        do i=1,this%nbins
           write(*,*) CMB%void_qV(i),vec(i)

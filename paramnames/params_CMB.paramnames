@@ -14,8 +14,6 @@ deltazrei     {\Delta}z_{\rm re} #width of reionization
 Alens         A_{L}     #lensing potential scaled by sqrt(A_lens)
 Alensf        A^f_L     #amplitude of smoothing power from fiducial models 
 fdm           \epsilon_0 f_d    #CosmoRec dark matter annihilation parameter, 0910.3663
-baryfeed      \log B #meadfit baryon feedback param
-barybloat     \eta_0 #meadfit baryon bloating param
 endred	      z_{end}
 ODEsteps      n_{\rm ODE}
 voidmodel     m
@@ -30,6 +28,7 @@ void_z1       z_1
 void_z2       z_2
 void_z3       z_3
 void_fid      q_{\rm fid}
+fiducial_model m_f
 logA          {\rm{ln}}(10^{10} A_s)
 ns            n_s	    #beware that pivot scale can change in .ini file
 nrun          n_{\rm run}

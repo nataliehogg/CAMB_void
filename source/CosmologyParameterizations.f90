@@ -76,7 +76,7 @@
 
     call Ini%Read('number_of_bins',CosmoSettings%void_n)
 
-    call this%SetTheoryParameterNumbers(23+2*CosmoSettings%void_n+1,last_power_index) !NH increased no. of params to 23 +1 for fiducial and prior likelihood
+    call this%SetTheoryParameterNumbers(23+2*CosmoSettings%void_n+2,last_power_index) !NH increased no. of params to 23 +1 for fiducial and prior likelihood
 
     !----------------------------------------
     end subroutine TP_Init
@@ -335,6 +335,8 @@
         end do
 
         CMB%void_fiducial = Params(23+2*CosmoSettings%void_n+1)
+
+	CMB%void_mean_fiducial = Params(23+2*CosmoSettings%void_n+2) !SPmod
 
         call SetFast(Params,CMB)
     end if
