@@ -14,6 +14,8 @@ deltazrei     {\Delta}z_{\rm re} #width of reionization
 Alens         A_{L}     #lensing potential scaled by sqrt(A_lens)
 Alensf        A^f_L     #amplitude of smoothing power from fiducial models 
 fdm           \epsilon_0 f_d    #CosmoRec dark matter annihilation parameter, 0910.3663
+baryfeed      \log B #meadfit baryon feedback param		
+barybloat     \eta_0 #meadfit baryon bloating param
 endred	      z_{end}
 ODEsteps      n_{\rm ODE}
 voidmodel     m
