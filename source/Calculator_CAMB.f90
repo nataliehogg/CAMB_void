@@ -109,7 +109,7 @@
     P%Reion%redshift= CMB%zre
     P%Reion%delta_redshift = CMB%zre_delta
     w_lam = CMB%w
-    wa_ppf = CMB%wa
+    !wa_ppf = CMB%wa  !SPmod
     P%baryfeed =CMB%baryfeed !SJ
     P%barybloat = CMB%barybloat !SJ
     ALens = CMB%ALens
