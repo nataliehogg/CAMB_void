@@ -34,13 +34,16 @@ module corrprior
       integer :: nbins
       real (mcp) csi_0,a_max, a_min
       real(mcp) alpha_c,sigma_alpha
-      real (mcp), dimension(nbins+1), intent(in) :: void_redshift
-      !
+      real (mcp), dimension(nbins+2), intent(in) :: void_redshift
+
       a_max = 1./(1.+void_redshift(1))
-      a_min = 1./(1.+void_redshift(nbins+1))
-      ! ! if (CPdebugging) then
-      ! !   print*, a_max, a_min
-      ! ! end if
+      a_min = 1./(1.+void_redshift(nbins+2))
+
+      ! if (CPdebugging) then
+      ! print*, void_redshift(1), void_redshift(nbins+2)
+      ! call MpiStop('stopped')
+      ! end if
+
       csi_0 = sigma_alpha**2./(alpha_c*PI)*(a_max - a_min)
       csi = csi_0/(1. +(abs(a)/alpha_c)**2.)
 
@@ -179,7 +182,7 @@ module corrprior
     integer :: voidbins
     character(LEN=:), allocatable :: covariance_file
     integer i,j
-    real (mcp), allocatable, dimension(:) :: Delta, scale_factor, void_redshift
+    real (mcp), allocatable, dimension(:) :: Delta, scale_factor
     real(mcp), PARAMETER :: tol=1.0E-5
 
     if (Ini%Read_Logical('use_corrprior',.false.)) then
@@ -191,7 +194,7 @@ module corrprior
         allocate(this%inv_cp_cov(this%nbins,this%nbins))
         allocate(Delta(this%nbins))
         allocate(scale_factor(this%nbins+1))
-        allocate(this%z_bins(this%nbins+1))
+        allocate(this%z_bins(this%nbins++2))
         !SPmod: insert here the computation of the covariance matrix
         scale_factor(1)= 1.
         this%z_bins(1) = 0.
@@ -199,6 +202,7 @@ module corrprior
         this%z_bins(3) = Ini%Read_Double('param[void_z1]')
         this%z_bins(4) = Ini%Read_Double('param[void_z2]')
         this%z_bins(5) = Ini%Read_Double('param[void_z3]')
+        this%z_bins(6) = Ini%Read_Double('param[endred]')
         this%alpha_c = Ini%Read_Double('alpha_c')
         this%sigma_alpha = Ini%Read_Double('sigma_alpha')
         do i = 1, this%nbins
