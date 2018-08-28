@@ -194,7 +194,7 @@ module corrprior
         allocate(this%inv_cp_cov(this%nbins,this%nbins))
         allocate(Delta(this%nbins))
         allocate(scale_factor(this%nbins+1))
-        allocate(this%z_bins(this%nbins++2))
+        allocate(this%z_bins(this%nbins+2))
         !SPmod: insert here the computation of the covariance matrix
         scale_factor(1)= 1.
         this%z_bins(1) = 0.
