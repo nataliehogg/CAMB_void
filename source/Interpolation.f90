@@ -61,7 +61,7 @@
         private
         logical :: initialized =.false.
     contains
-     procedure FirstUse => SInterpolator_FirstUse
+     procedure :: FirstUse => SInterpolator_FirstUse
     end Type SInterpolator
 
     Type, extends(SInterpolator) :: SCubicSpline
@@ -69,8 +69,9 @@
         real(sp_acc), dimension(:), pointer :: X => NULL()
         real(sp_acc), dimension(:), pointer :: F => NULL(), ddF => NULL()
     contains
-    procedure Init => SCubicSpline_Init
-    procedure Value => SCubicSpline_Value
+    procedure :: Init => SCubicSpline_Init
+    procedure :: Value => SCubicSpline_Value
+
     FINAL :: SCubicSpline_Free
     end Type
 

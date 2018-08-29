@@ -12,7 +12,7 @@
     use CMBLikelihoods
     use bao
     use mpk
-    use CosmicShear !SJ   
+    !use CosmicShear !SJ   
     use wigglez
     use szcounts !Anna
     use wl
@@ -35,7 +35,7 @@
     if (use_mpk) call WiggleZLikelihood_Add(DataLikelihoods, Ini)
 
     call BAOLikelihood_Add(DataLikelihoods, Ini)
-    call CosmicShearLikelihood_Add(DataLikelihoods, Ini) !SJ
+    !call CosmicShearLikelihood_Add(DataLikelihoods, Ini) !SJ
     call SZLikelihood_Add(DataLikelihoods, Ini) !Anna
 
     call WLLikelihood_Add(DataLikelihoods, Ini)

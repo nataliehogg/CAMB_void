@@ -376,7 +376,7 @@ contains
 
     !Loop over redshifts
 !!!    !$OMP PARALLEL DO FIRSTPRIVATE(linspec,cosi,PKSJ,zint,zshift,p, lut,jsj,karray,i,plin,p1h,p2h,pfull,pkd)
-   !$OMP PARALLEL DO FIRSTPRIVATE(cosi,nz,nk,j,CAMB_PK,k,z,lut,i,plin,p1h,p2h,pfull)
+!!!   !$OMP PARALLEL DO FIRSTPRIVATE(cosi,nz,nk,j,CAMB_PK,k,z,lut,i,plin,p1h,p2h,pfull)
     DO j=1,nz
 
        !Initialise the specific cosmology (fill sigma(R) and P_lin tables)
@@ -404,7 +404,7 @@ contains
        END DO
 
     END DO
-   !$OMP END PARALLEL DO
+!!!   !$OMP END PARALLEL DO
 
   END SUBROUTINE HMcode
 
