@@ -325,7 +325,7 @@ class CAMBparams(CAMB_Structure):
     def set_cosmology(self, H0=67.0, cosmomc_theta=None, ombh2=0.022, omch2=0.12, omk=0.0,
                       void_model=2, num_bins = 4, smooth_factor = 10, bin_redshift_1 = 0.3,bin_q_1 = -0.1,
                       bin_redshift_2 = 0.9,bin_q_2 = 0.3,bin_redshift_3 = 2.5,bin_q_3 = -1.4,bin_redshift_4 = 10,
-                      bin_q_4 = 0.0, correlation_length = 0.5, ending_z   = 10, ODEsteps   = 10000
+                      bin_q_4 = 0.0, correlation_length = 0.5, ending_z   = 10, ODEsteps   = 10000,
                       neutrino_hierarchy='degenerate', num_massive_neutrinos=1,
                       mnu=0.06, nnu=3.046, YHe=None, meffsterile=0.0, standard_neutrino_neff=3.046,
                       TCMB=constants.COBE_CMBTemp, tau=None, deltazrei=None, bbn_predictor=None,
