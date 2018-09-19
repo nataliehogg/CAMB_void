@@ -226,6 +226,19 @@ class CAMBparams(CAMB_Structure):
         ("omegac", c_double),
         ("omegav", c_double),
         ("omegan", c_double),
+        ("void_model", c_int),
+        ("num_bins", c_int),
+        ("smooth_factor", c_double),
+        ("bin_redshift_1", c_double ),
+        ("bin_q_1", c_double),
+        ("bin_redshift_2", c_double),
+        ("bin_q_2", c_double),
+        ("bin_redshift_3", c_double),
+        ("bin_q_3", c_double),
+        ("bin_redshift_4", c_double),
+        ("bin_q_4", c_double),
+        ("correlation_length", c_double),
+        ("ending_z", c_double),
         ("H0", c_double),
         ("TCMB", c_double),
         ("YHe", c_double),
@@ -310,6 +323,9 @@ class CAMBparams(CAMB_Structure):
         return self
 
     def set_cosmology(self, H0=67.0, cosmomc_theta=None, ombh2=0.022, omch2=0.12, omk=0.0,
+                      void_model=2, num_bins = 4, smooth_factor = 10, bin_redshift_1 = 0.3,bin_q_1 = -0.1,
+                      bin_redshift_2 = 0.9,bin_q_2 = 0.3,bin_redshift_3 = 2.5,bin_q_3 = -1.4,bin_redshift_4 = 10,
+                      bin_q_4 = 0.0, correlation_length = 0.5, ending_z   = 10, ODEsteps   = 10000
                       neutrino_hierarchy='degenerate', num_massive_neutrinos=1,
                       mnu=0.06, nnu=3.046, YHe=None, meffsterile=0.0, standard_neutrino_neff=3.046,
                       TCMB=constants.COBE_CMBTemp, tau=None, deltazrei=None, bbn_predictor=None,
@@ -383,6 +399,19 @@ class CAMBparams(CAMB_Structure):
         fac = (self.H0 / 100.0) ** 2
         self.omegab = ombh2 / fac
         self.omegac = omch2 / fac
+        self.void_model = void_model
+        self.num_bins = num_bins
+        self.smooth_factor = smooth_factor
+        self.bin_redshift_1 = bin_redshift_1
+        self.bin_q_1 = bin_q_1
+        self.bin_redshift_2 = bin_redshift_2
+        self.bin_q_2 = bin_q_2
+        self.bin_redshift_3 = bin_redshift_3
+        self.bin_q_3 = bin_q_3
+        self.bin_redshift_4 = bin_redshift_4
+        self.bin_q_4 = bin_q_4
+        self.correlation_length = correlation_length
+        self.ending_z = ending_z
 
         neutrino_mass_fac = 94.07
         # conversion factor for thermal with Neff=3 TCMB=2.7255

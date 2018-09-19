@@ -3,15 +3,9 @@
 #Set FISHER=Y to compile bispectrum fisher matrix code
 FISHER=
 
-#native optimization does not work on Mac gfortran or heterogeneous clusters
-CLUSTER_SAFE ?= 0
-ifneq ($(CLUSTER_SAFE), 0)
-NONNATIVE = 1
-endif
-
 #Will detect ifort/gfortran or edit for your compiler
 ifneq ($(COMPILER),gfortran)
-ifortErr = $(shell which ifort >/dev/null; echo $$?)
+ifortErr = 1
 else
 ifortErr = 1
 endif
@@ -22,17 +16,6 @@ F90C     = ifort
 FFLAGS = -W0 -WB -fpp
 DEBUGFLAGS = -g -check all -check noarg_temp_created -traceback -fpp -fpe0
 
-ifeq ($(shell uname -s),Darwin)
-SFFLAGS = -dynamiclib #-fpic
-else
-SFFLAGS = -shared -fpic
-endif
-
-ifdef NONNATIVE
-FFLAGS+=-O3 -ipo -axCORE-AVX2
-else
-FFLAGS+=-fast
-endif
 
 ifortVer_major = $(shell ifort -v 2>&1 | cut -d " " -f 3 | cut -d. -f 1)
 ifeq ($(shell test $(ifortVer_major) -gt 15; echo $$?),0)
@@ -60,7 +43,7 @@ COMPILER = gfortran
 F90C     = gfortran
 SFFLAGS =  -shared -fPIC
 
-FFLAGS =  -O3 -fopenmp -ffast-math -fmax-errors=4
+FFLAGS =  -O3 -fopenmp -ffast-math -fmax-errors=4 -ffree-line-length-none
 DEBUGFLAGS = -cpp -g -fbounds-check -fbacktrace -ffree-line-length-none -fmax-errors=4 -ffpe-trap=invalid,overflow,zero
 MODOUT =  -J$(OUTPUT_DIR)
 SMODOUT = -J$(DLL_DIR)

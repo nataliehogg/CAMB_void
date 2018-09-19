@@ -57,14 +57,12 @@ def check_gfortran(version=gfortran_min, msg=True, exit=False, import_fail_ok=Tr
     else:
         ok = False
     if not ok and msg:
-        try:
-            ifort = subprocess.check_output("ifort -v", shell=True)
-        except:
-            ifort = False
-        if not ifort:
-            raise Exception(
-                'You need gfortran %s or higher to compile (found: %s).' % (
-                    version, gfortran_version))
+        # try:
+        #     ifort = subprocess.check_output("ifort -v", shell=True)
+        # except:
+        #     ifort = False
+        # if not ifort:
+        raise Exception('You need gfortran %s or higher to compile (found: %s).' % (version, gfortran_version))
 
     if exit:
         sys.exit(1 if ok else 0)
@@ -103,7 +101,7 @@ class SharedLibrary(build, object):
             FFLAGS = "-shared -static -cpp -fopenmp -O3 -ffast-math -fmax-errors=4"
             if is32Bit: FFLAGS = "-m32 " + FFLAGS
             SOURCES = "constants.f90 utils.f90 subroutines.f90 inifile.f90 power_tilt.f90 recfast.f90 reionization.f90" \
-                      " modules.f90 bessels.f90 equations_ppf.f90 halofit_ppf.f90 lensing.f90 SeparableBispectrum.f90 cmbmain.f90" \
+                      " modules.f90 bessels.f90 initsolver.f90 equations.f90 halofit_ppf.f90 lensing.f90 SeparableBispectrum.f90 cmbmain.f90" \
                       " camb.f90 camb_python.f90"
             OUTPUT = r"-o %s\camb\%s" % (pycamb_path, DLLNAME)
             scrs = os.listdir(os.getcwd())
@@ -129,8 +127,8 @@ class SharedLibrary(build, object):
                     os.remove(file)
         else:
             print("Compiling source...")
-            subprocess.call("make camblib.so PYCAMB_OUTPUT_DIR=%s/camb/ CLUSTER_SAFE=%d" %
-                            (pycamb_path, int(self.cluster)), shell=True)
+            subprocess.call("make camblib.so COMPILER=gfortran PYCAMB_OUTPUT_DIR=%s/camb/ CLUSTER_SAFE=%d" %
+                            (pycamb_path, int(self.cluster)) , shell=True)
             so_file = os.path.join(pycamb_path, 'camb', 'camblib.so')
             if not os.path.isfile(so_file): sys.exit('Compilation failed')
             subprocess.call("chmod 755 %s" % so_file, shell=True)
