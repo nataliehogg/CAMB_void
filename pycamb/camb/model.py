@@ -163,13 +163,11 @@ class TransferParams(CAMB_Structure):
     """
     Object storing parameters for the matter power spectrum calculation. PK variables are for setting main outputs.
     Other entries are used internally, e.g. for sampling to get correct non-linear corrections and lensing.
-
     :ivar high_precision: True for more accuracy
     :ivar kmax: k_max to output
     :ivar k_per_logint: number of points per log k interval. If zero, set an irregular optimized spacing.
     :ivar PK_num_redshifts: number of redshifts to calculate
     :ivar PK_redshifts: redshifts to output for the matter transfer and power
-
     """
     _fields_ = [
         ("high_precision", c_int),  # logical
@@ -191,9 +189,7 @@ class CAMBparams(CAMB_Structure):
     """
     Object storing the parameters for a CAMB calculation, including cosmological parameters and
     settings for what to calculate. When a new object is instantiated, default parameters are set automatically.
-
     You can view the set of underlying parameters used by the Fortran code by printing the CAMBparams instance.
-
     To add a new parameter, add it to the CAMBparams type in modules.f90, then  edit the _fields_ list in the CAMBparams
     class in model.py to add the new parameter in the corresponding location of the member list. After rebuilding the
     python version you can then access the parameter by using params.new_parameter where params is a CAMBparams instance.
@@ -239,6 +235,7 @@ class CAMBparams(CAMB_Structure):
         ("bin_q_4", c_double),
         ("correlation_length", c_double),
         ("ending_z", c_double),
+        ("ODEsteps", c_int),
         ("H0", c_double),
         ("TCMB", c_double),
         ("YHe", c_double),
@@ -277,7 +274,6 @@ class CAMBparams(CAMB_Structure):
     def copy(self):
         """
         Make independent copy.
-
          :return: copy of self
         """
         return copy.deepcopy(self)
@@ -285,7 +281,6 @@ class CAMBparams(CAMB_Structure):
     def validate(self):
         """
         Do some quick tests for sanity
-
         :return: True if OK
         """
         return CAMB_validateparams(byref(self))
@@ -295,7 +290,6 @@ class CAMBparams(CAMB_Structure):
         """
         Set parameters determining calculation accuracy (large values may give big slow down).
         Note curently these are set globally, not just per parameter set.
-
         :param AccuracyBoost: increase AccuracyBoost to decrease integration step size, increase density of k sampling, etc.
         :param lSampleBoost: increase lSampleBoost to increase density of L sampling for CMB
         :param lAccuracyBoost: increase lAccuracyBoost to increase the maximum L included in the Boltzmann hierarchies
@@ -314,7 +308,6 @@ class CAMBparams(CAMB_Structure):
     def set_initial_power(self, initial_power_params):
         """
         Set the InitialPower primordial power spectrum parameters
-
         :param initial_power_params: :class:`.initialpower.InitialPowerParams` instance
         :return: self
         """
@@ -336,7 +329,6 @@ class CAMBparams(CAMB_Structure):
         Set the neutrino_hierarchy parameter to normal or inverted to use a two-eigenstate model that is a good
         approximation to the known mass splittings seen in oscillation measurements.
         If you require more fine-grained control you can set the neutrino parameters directly rather than using this function.
-
         :param H0: Hubble parameter (in km/s/Mpc)
         :param cosmomc_theta: The CosmoMC theta parameter. You must set H0=None to solve for H0 given cosmomc_theta. Note that
                 you must have already set the dark energy model, you can't use set_cosmology with cosmomc_theta and then
@@ -358,7 +350,6 @@ class CAMBparams(CAMB_Structure):
         :param bbn_predictor: :class:`.bbn.BBNPredictor` instance used to get YHe from BBN consistency if YHe is None
         :param theta_H0_range: if cosmomc_theta is specified, the min, max interval of H0 values to map to; outside this range
                  it will raise an exception.
-
         """
 
         if YHe is None:
@@ -412,6 +403,7 @@ class CAMBparams(CAMB_Structure):
         self.bin_q_4 = bin_q_4
         self.correlation_length = correlation_length
         self.ending_z = ending_z
+        self.ODEsteps = ODEsteps
 
         neutrino_mass_fac = 94.07
         # conversion factor for thermal with Neff=3 TCMB=2.7255
@@ -480,7 +472,6 @@ class CAMBparams(CAMB_Structure):
         r"""
         Set dark energy parameters. Not that in this version these are not actually stored in
         the CAMBparams variable but set globally. So be careful!
-
         :param w: :math:`w\equiv p_{\rm de}/\rho_{\rm de}`, assumed constant
         :param sound_speed: rest-frame sound speed of dark energy fluid
         :param dark_energy_model: model to use, default is 'fluid'
@@ -500,7 +491,6 @@ class CAMBparams(CAMB_Structure):
     def get_omega_k(self):
         r"""
         Get curvature parameter :math:`\Omega_K`
-
         :return: :math:`\Omega_K`
         """
         return 1 - self.omegab - self.omegac - self.omegan - self.omegav
@@ -523,7 +513,6 @@ class CAMBparams(CAMB_Structure):
         Get BBN helium nucleon fraction (NOT the same as the mass fraction Y_He) by intepolation using the
         :class:`.bbn.BBNPredictor` instance passed to :meth:`.model.CAMBparams.set_cosmology`
         (or the default one, if `Y_He` has not been set).
-
         :param ombh2: :math:`\Omega_b h^2` (default: value passed to :meth:`.model.CAMBparams.set_cosmology`)
         :param delta_neff:  additional :math:`N_{\rm eff}` relative to standard value (of 3.046) (default: from values passed to :meth:`.model.CAMBparams.set_cosmology`)
         :return:  :math:`Y_p^{\rm BBN}` helium nucleon fraction predicted by BBN.
@@ -540,7 +529,6 @@ class CAMBparams(CAMB_Structure):
         Get deuterium ration D/H by intepolation using the
         :class:`.bbn.BBNPredictor` instance passed to :meth:`.model.CAMBparams.set_cosmology`
         (or the default one, if `Y_He` has not been set).
-
         :param ombh2: :math:`\Omega_b h^2` (default: value passed to :meth:`.model.CAMBparams.set_cosmology`)
         :param delta_neff:  additional :math:`N_{\rm eff}` relative to standard value (of 3.046) (default: from values passed to :meth:`.model.CAMBparams.set_cosmology`)
         :return: BBN helium nucleon fraction D/H
@@ -556,7 +544,6 @@ class CAMBparams(CAMB_Structure):
                          accurate_massive_neutrino_transfers=False, silent=False):
         """
         Set parameters for calculating matter power spectra and transfer functions.
-
         :param redshifts: array of redshifts to calculate
         :param kmax: maximum k to calculate
         :param k_per_logint: number of k steps per log k. Set to zero to use default optimized spacing.
@@ -599,7 +586,6 @@ class CAMBparams(CAMB_Structure):
         """
         Settings for whether or not to use non-linear corrections for the CMB lensing potential.
         Note that set_for_lmax also sets lensing to be non-linear if lens_potential_accuracy>0
-
         :param nonlinear: true to use non-linear corrections
         """
         if nonlinear:
@@ -619,7 +605,6 @@ class CAMBparams(CAMB_Structure):
         Set parameters to get CMB power spectra accurate to specific a l_lmax.
         Note this does not fix the actual output L range, spectra may be calculated above l_max (but may not be accurate there).
         To fix the l_max for output arrays use the optional input argument to :meth:`.camb.CAMBdata.get_cmb_power_spectra` etc.
-
         :param lmax: :math:`\ell_{\rm max}` you want
         :param max_eta_k: maximum value of :math:`k \eta_0\approx k\chi_*` to use, which indirectly sets k_max. If None, sensible value set automatically.
         :param lens_potential_accuracy: Set to 1 or higher if you want to get the lensing potential accurate

@@ -2,7 +2,7 @@
 import sys, platform, os
 from matplotlib import pyplot as plt
 import numpy as np
-print('Using CAMB installed at %s'%(os.path.realpath(os.path.join(os.getcwd(),'../../CAMB_original'))))
+print('Using CAMB installed at %s'%(os.path.realpath(os.path.join(os.getcwd(),'..'))))
 #uncomment this if you are running remotely and want to keep in synch with repo changes
 #if platform.system()!='Windows':
 #    !cd $HOME/git/camb; git pull github master; git log -1
@@ -15,13 +15,14 @@ print('CAMB version: %s '%camb.__version__)
 #MINIMIZED VOID
 pars = camb.CAMBparams()
 #This function sets up CosmoMC-like settings, with one massive neutrino and helium set using BBN consistency
-#pars.set_cosmology(H0=70.0, ombh2=0.0226, omch2=0.112, mnu=0.06, omk=0, tau=0.06)
-pars.set_cosmology(H0=70.0, ombh2=0.0226, omch2=0.112, mnu=0.06, omk=0, tau=0.06, void_model=2, num_bins = 4,
-        smooth_factor = 10, bin_redshift_1 = 0.3,bin_q_1 = -0.1,bin_redshift_2 = 0.9,bin_q_2 = 0.3,bin_redshift_3 = 2.5,bin_q_3 = -1.4,bin_redshift_4 = 10,bin_q_4 = 0.0, correlation_length = 0.5,
-        ending_z   = 10, ODEsteps   = 10000)
-pars.InitPower.set_params(ns=0.965, r=0, As=2e-9)
+# pars.set_cosmology(H0=70.0, ombh2=0.0226, omch2=0.112, mnu=0.06, omk=0, tau=0.06)
+pars.set_cosmology(H0=67.0, cosmomc_theta=None, ombh2=0.022, omch2=0.12, omk=0.0,tau=0.06,
+                  void_model=2, num_bins = 4, smooth_factor = 10, bin_redshift_1 = 0.3,bin_q_1 = -0.1,
+                  bin_redshift_2 = 0.9,bin_q_2 = -0.3,bin_redshift_3 = 2.5,bin_q_3 = -1.4,bin_redshift_4 = 10,
+                  bin_q_4 = 0.0, correlation_length = 0.5, ending_z   = 10, ODEsteps   = 10000)
+pars.InitPower.set_params(ns=0.965, r=0, As=2.1e-9)
 pars.set_for_lmax(2500, lens_potential_accuracy=0);
-#pars.minimizeme = False
+
 #calculate results for these parameters
 results_VOID = camb.get_results(pars)
 
