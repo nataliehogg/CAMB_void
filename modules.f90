@@ -3244,36 +3244,3 @@
     end subroutine GetBackgroundEvolution
 
     end module ThermoData
-
-    module VOID_utilities
-      use precision
-      use ModelParams
-
-    contains
-
-!      function void_qV(a)
-!        use precision
-!        use ModelParams
-!        implicit none
-!        real(dl), intent(in) :: a
-!        real(dl) :: z
-!        real(dl):: void_qV
-!
-!        z = 1._dl/(a) -1._dl
-!
-!        if (z > 0._dl .and. z<=0.3_dl)  then
-!          void_qV =CP%qV_34
-!        else if(z > 0.3_dl .and. z<=0.9_dl ) then
-!          void_qV = CP%qV_23
-!        else if(z > 0.9_dl .and. z<=2.5_dl ) then
-!          void_qV = CP%qV_12
-!        else if(z > 2.5_dl ) then
-!            void_qV = CP%qV_01
-!        end if
-!
-!        return
-!
-!      end function void_qV
-
-
-    end module VOID_utilities

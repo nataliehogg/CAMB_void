@@ -57,12 +57,12 @@ def check_gfortran(version=gfortran_min, msg=True, exit=False, import_fail_ok=Tr
     else:
         ok = False
     if not ok and msg:
-        # try:
-        #     ifort = subprocess.check_output("ifort -v", shell=True)
-        # except:
-        #     ifort = False
-        # if not ifort:
-        raise Exception('You need gfortran %s or higher to compile (found: %s).' % (version, gfortran_version))
+        try:
+            ifort = subprocess.check_output("ifort -v", shell=True)
+        except:
+            ifort = False
+        if not ifort:
+            raise Exception('You need gfortran %s or higher to compile (found: %s).' % (version, gfortran_version))
 
     if exit:
         sys.exit(1 if ok else 0)
@@ -127,7 +127,7 @@ class SharedLibrary(build, object):
                     os.remove(file)
         else:
             print("Compiling source...")
-            subprocess.call("make camblib.so COMPILER=gfortran PYCAMB_OUTPUT_DIR=%s/camb/ CLUSTER_SAFE=%d" %
+            subprocess.call("make camblib.so PYCAMB_OUTPUT_DIR=%s/camb/ CLUSTER_SAFE=%d" %
                             (pycamb_path, int(self.cluster)) , shell=True)
             so_file = os.path.join(pycamb_path, 'camb', 'camblib.so')
             if not os.path.isfile(so_file): sys.exit('Compilation failed')

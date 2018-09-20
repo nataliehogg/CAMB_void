@@ -6,7 +6,7 @@
 
 module initsolver
 use precision
-use constants
+! use constants
 use ModelParams
 
 implicit none
@@ -126,6 +126,7 @@ end subroutine getrhos
 subroutine deinterface(CP)
       Type(CAMBparams) CP
       integer, parameter      :: n = 1
+      real, parameter :: cc = 2.99792458e8_dl
       real, dimension(0:n)    :: x                              !dependent variables: rho_m, rho_v
       real                    :: h                              !step size
       real(dl)                :: rhoc_init, rhov_init
@@ -172,8 +173,8 @@ subroutine deinterface(CP)
       end if
 
       !setting initial conditions for rho_c and rho_v at z=0
-      rhoc_init = 3*(1000*CP%H0/c)**2.*CP%omegac               !8 pi G * rho_c^0
-      rhov_init = 3*(1000*CP%H0/c)**2.*CP%omegav               !8 pi G * rho_V^0
+      rhoc_init = 3*(1000*CP%H0/cc)**2.*CP%omegac               !8 pi G * rho_c^0
+      rhov_init = 3*(1000*CP%H0/cc)**2.*CP%omegav               !8 pi G * rho_V^0
       x = (/rhoc_init, rhov_init/)                             !initial conditions
       h = (log(1/(1+final_z)) - log(1/(1+initial_z)))/nsteps
 
@@ -187,8 +188,8 @@ subroutine deinterface(CP)
             gpreds(i) = (CP%zbins(i)+CP%zbins(i-1))/2.
          end do
 
-         !Creating command line 
-  
+         !Creating command line
+
          !Generate tmp file name based on PID
          write (feature_file(11:16), "(Z6.6)") getpid()
          !1. Prepare command and launch it!
@@ -199,7 +200,7 @@ subroutine deinterface(CP)
          write(qbin, "(10f15.7)"     ) (CP%qbins(k),k=1,CP%numvoidbins) !python parser struggles with scientific notation negatives: using floats here
          write(lencorr, "(10E15.7)"  ) CP%corrlen
 
-      
+
          if (CP%void_model.eq.GP_void) then
             if (debugging) write(*,*) 'WORKING WITH GP'
             !here needs the call to script with no baseline
@@ -211,11 +212,11 @@ subroutine deinterface(CP)
 
             if (debugging) write(*,*) 'WORKING WITH GP (with baseline)'
 
-            command_plus_arguments = "python camb/GP.py --inired "//trim(adjustl(z_ini))//" --endred "//trim(adjustl(z_end))//" --ODEsteps "//trim(adjustl(steps_de))// & 
+            command_plus_arguments = "python camb/GP.py --inired "//trim(adjustl(z_ini))//" --endred "//trim(adjustl(z_end))//" --ODEsteps "//trim(adjustl(steps_de))// &
             & " --redshifts "//trim(adjustl(redbin))// " --couplings "//trim(adjustl(qbin))// " --l "//trim(adjustl(lencorr))//" --outfile " // feature_file
 
             !calling script!!!
-            if (debugging) then 
+            if (debugging) then
                write(*,*) 'Calling Gaussian process script with command line:'
                write(*,*) trim(adjustl(command_plus_arguments))
             end if
@@ -255,10 +256,10 @@ subroutine deinterface(CP)
             gpreds(i) = (CP%zbins(i)+CP%zbins(i-1))/2.
          end do
 
-         !Creating command line 
-  
+         !Creating command line
+
          !Generate tmp file name based on PID
-         write (feature_file(11:16), "(Z6.6)"), getpid()
+         write (feature_file(11:16), "(Z6.6)") getpid()
          !1. Prepare command and launch it!
          write(z_ini, "(E15.7)"      ) initial_z
          write(z_end, "(E15.7)"      ) final_z
@@ -267,7 +268,7 @@ subroutine deinterface(CP)
          write(qbin, "(10f15.7)"     ) (CP%qbins(k),k=1,CP%numvoidbins) !python parser struggles with scientific notation negatives: using floats here
          write(lencorr, "(10E15.7)"  ) CP%corrlen
 
-      
+
          if (CP%void_model.eq.GP_void) then
             if (debugging) write(*,*) 'WORKING WITH GP'
             !here needs the call to script with no baseline
@@ -279,11 +280,11 @@ subroutine deinterface(CP)
 
             if (debugging) write(*,*) 'WORKING WITH GP (with baseline)'
 
-            command_plus_arguments = "python camb/GP.py --inired "//trim(adjustl(z_ini))//" --endred "//trim(adjustl(z_end))//" --ODEsteps "//trim(adjustl(steps_de))// & 
+            command_plus_arguments = "python camb/GP.py --inired "//trim(adjustl(z_ini))//" --endred "//trim(adjustl(z_end))//" --ODEsteps "//trim(adjustl(steps_de))// &
             & " --redshifts "//trim(adjustl(redbin))// " --couplings "//trim(adjustl(qbin))// " --l "//trim(adjustl(lencorr))//" --outfile " // feature_file
 
             !calling script!!!
-            if (debugging) then 
+            if (debugging) then
                write(*,*) 'Calling Gaussian process script with command line:'
                write(*,*) trim(adjustl(command_plus_arguments))
             end if

@@ -1805,7 +1805,7 @@
     real(dl) ddopacity, visibility, dvisibility, ddvisibility, exptau, lenswindow
     real(dl) ISW, quadrupole_source, doppler, monopole_source, tau0
     real(dl) redshift, a_1, a_2, a_3
-    real(dl)    :: voidQ, vq
+    real(dl) voidQ, vq
 
     k=EV%k_buf
     k2=EV%k2_buf
