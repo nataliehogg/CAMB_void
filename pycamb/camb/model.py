@@ -66,7 +66,7 @@ _lAccuracyBoost = dll_import(c_float, "modelparams", "laccuracyboost")
 _DoLateRadTruncation = dll_import(c_bool, "gaugeinterface", "dolateradtruncation")
 
 DebugParam = dll_import(c_double, "modelparams", "debugparam")
-# DebugParam.value = 1000000*2
+#DebugParam.value = 1000000*2
 
 # logical
 do_bispectrum = dll_import(c_int, "modelparams", "do_bispectrum")
@@ -222,20 +222,16 @@ class CAMBparams(CAMB_Structure):
         ("omegac", c_double),
         ("omegav", c_double),
         ("omegan", c_double),
+        #MMmod---------
+        ("smoothfactor", c_double),
+        ("zbins", c_double * 20 ),
+        ("qbins", c_double * 20),
+        ("corrlen", c_double),
+        ("endred", c_double),
         ("void_model", c_int),
-        ("num_bins", c_int),
-        ("smooth_factor", c_double),
-        ("bin_redshift_1", c_double ),
-        ("bin_q_1", c_double),
-        ("bin_redshift_2", c_double),
-        ("bin_q_2", c_double),
-        ("bin_redshift_3", c_double),
-        ("bin_q_3", c_double),
-        ("bin_redshift_4", c_double),
-        ("bin_q_4", c_double),
-        ("correlation_length", c_double),
-        ("ending_z", c_double),
-        ("ODEsteps", c_int),
+        ("numvoidbins", c_int),
+        ("numstepsODE", c_int),
+        #-------MMmod
         ("H0", c_double),
         ("TCMB", c_double),
         ("YHe", c_double),
@@ -316,9 +312,8 @@ class CAMBparams(CAMB_Structure):
         return self
 
     def set_cosmology(self, H0=67.0, cosmomc_theta=None, ombh2=0.022, omch2=0.12, omk=0.0,
-                      void_model=2, num_bins = 4, smooth_factor = 10, bin_redshift_1 = 0.3,bin_q_1 = -0.1,
-                      bin_redshift_2 = 0.9,bin_q_2 = 0.3,bin_redshift_3 = 2.5,bin_q_3 = -1.4,bin_redshift_4 = 10,
-                      bin_q_4 = 0.0, correlation_length = 0.5, ending_z   = 10, ODEsteps   = 10000,
+                      void_model=2, num_bins = 1, smooth_factor = 10, zbins=[1.], qbins=[0.], correlation_length = 0.5, ending_z = 10, ODEsteps = 10000,
+                      #void_model=2, num_bins = 1, smooth_factor = 10, correlation_length = 0.5, ending_z = 10, ODEsteps = 10000,
                       neutrino_hierarchy='degenerate', num_massive_neutrinos=1,
                       mnu=0.06, nnu=3.046, YHe=None, meffsterile=0.0, standard_neutrino_neff=3.046,
                       TCMB=constants.COBE_CMBTemp, tau=None, deltazrei=None, bbn_predictor=None,
@@ -391,20 +386,15 @@ class CAMBparams(CAMB_Structure):
         self.omegab = ombh2 / fac
         self.omegac = omch2 / fac
         self.void_model = void_model
-        self.num_bins = num_bins
-        self.smooth_factor = smooth_factor
-        self.bin_redshift_1 = bin_redshift_1
-        self.bin_q_1 = bin_q_1
-        self.bin_redshift_2 = bin_redshift_2
-        self.bin_q_2 = bin_q_2
-        self.bin_redshift_3 = bin_redshift_3
-        self.bin_q_3 = bin_q_3
-        self.bin_redshift_4 = bin_redshift_4
-        self.bin_q_4 = bin_q_4
-        self.correlation_length = correlation_length
-        self.ending_z = ending_z
-        self.ODEsteps = ODEsteps
+        self.numvoidbins = num_bins
+        self.smoothfactor = smooth_factor
+        for i in range(num_bins):
+            self.zbins[i] = zbins[i]
+            self.qbins[i] = qbins[i]
 
+        self.corrlen = correlation_length
+        self.endred = ending_z
+        self.numstepsODE = ODEsteps
         neutrino_mass_fac = 94.07
         # conversion factor for thermal with Neff=3 TCMB=2.7255
 
@@ -555,6 +545,7 @@ class CAMBparams(CAMB_Structure):
 
         self.WantTransfer = True
         self.Transfer.high_precision = True
+        print self.Transfer.high_precision
         self.Transfer.accurate_massive_neutrinos = accurate_massive_neutrino_transfers
         self.Transfer.kmax = kmax
         if nonlinear is not None:
@@ -572,6 +563,8 @@ class CAMBparams(CAMB_Structure):
             self.Transfer.k_per_logint = 0
         else:
             self.Transfer.k_per_logint = k_per_logint
+
+        print 'checazzo', self.Transfer.k_per_logint
         zs = sorted(redshifts, reverse=True)
         if not silent and np.any(np.array(zs) - np.array(redshifts) != 0):
             print("Note: redshifts have been re-sorted (earliest first)")

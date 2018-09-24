@@ -97,7 +97,7 @@
 
     !MMmod: maximum nuber of bins for void coupling
     !This is added to avoid messy allocations
-    integer, parameter :: maxbins = 1000
+    integer, parameter :: maxbins = 20
 
     ! Main parameters type
     type CAMBparams
@@ -115,7 +115,8 @@
         ! _tensor settings only used in initialization,
         !Max_l and Max_eta_k are set to the tensor variables if only tensors requested
 
-        real(dl)  :: omegab, omegac, omegav, omegan
+        real(dl)  :: omegab, omegac, omegav, omegan, smoothfactor, zbins(maxbins), qbins(maxbins), corrlen, endred
+        integer   :: void_model, numvoidbins, numstepsODE
         !Omega baryon, CDM, Lambda and massive neutrino
         real(dl)  :: H0,TCMB,yhe,Num_Nu_massless
         integer   :: Num_Nu_massive !sum of Nu_mass_numbers below
@@ -126,15 +127,15 @@
         integer   :: Nu_mass_numbers(max_nu) !physical number per eigenstate
 
         !MMmod: adding parameters for interactive void
-        integer   :: void_model                 !selects the specific model to use
-        integer   :: numstepsODE
-        real(dl)  :: startred, endred           !redshift limits for differential equation
-        real(dl)  :: qV                         !working only with constant for now (effectively 2 bins). TO BE CHANGED
-        integer   :: numvoidbins                !number of redshift bins for void coupling
-        real(dl)  :: smoothfactor               !smoothing facto for tanh connection in binned functions
-        real(dl)  :: zbins(maxbins)             !right margin of redshift bins (first left margin is always zero)
-        real(dl)  :: qbins(maxbins)             !value of qV within each redshift bin
-        real(dl)  :: corrlen                    !correlation lenght for gaussian process reconstruction
+        !integer   :: void_model                 !selects the specific model to use
+        !integer   :: numstepsODE
+        !real(dl)  :: startred!, endred           !redshift limits for differential equation
+        !real(dl)  :: qV                         !working only with constant for now (effectively 2 bins). TO BE CHANGED
+        !integer   :: numvoidbins                !number of redshift bins for void coupling
+        !real(dl)  :: smoothfactor               !smoothing facto for tanh connection in binned functions
+        !real(dl)  :: zbins(maxbins)             !right margin of redshift bins (first left margin is always zero)
+        !real(dl)  :: qbins(maxbins)             !value of qV within each redshift bin
+        !real(dl)  :: corrlen                    !correlation lenght for gaussian process reconstruction
 
         integer   :: Scalar_initial_condition
         !must be one of the initial_xxx values defined in GaugeInterface

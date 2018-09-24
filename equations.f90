@@ -65,6 +65,8 @@
     !It is called before first call to dtauda, but after
     !massive neutrinos are initialized and after GetOmegak
 
+write(0,*) 'TESTESTEST'
+
     if (CP%void_model.gt.0) then
        call deinterface(CP)
     else

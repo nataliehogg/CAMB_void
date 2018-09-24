@@ -23,7 +23,7 @@ integer                            :: model                       !choice of the
 integer, parameter                 :: theta_void=1, smooth_void=2 !possible options for q(z) binned reconstruction
 integer, parameter                 :: GP_void=3, baseline_void=4  !possible options for q(z) gaussian process reconstruction
 
-logical                            :: debugging = .false.         !if T prints some files to check solver
+logical                            :: debugging = .true.         !if T prints some files to check solver
 
 contains
 

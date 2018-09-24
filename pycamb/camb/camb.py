@@ -20,7 +20,7 @@ if six.PY3:
 else:
     from inspect import getargspec
 
-_debug_params = False
+_debug_params = True
 
 
 class _CAMBdata(CAMB_Structure):
