@@ -19,7 +19,7 @@ ifeq "$(ifortErr)" "0"
 
 #Intel compiler
 F90C     = ifort
-FFLAGS = -W0 -WB -fpp
+FFLAGS = -W0 -WB -fpp -traceback
 DEBUGFLAGS = -g -check all -check noarg_temp_created -traceback -fpp -fpe0
 
 ifeq ($(shell uname -s),Darwin)
