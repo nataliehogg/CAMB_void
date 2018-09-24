@@ -18,7 +18,7 @@ print('CAMB version: %s '%camb.__version__)
 #MINIMIZED DHOST
 pars = camb.CAMBparams()
 #This function sets up CosmoMC-like settings, with one massive neutrino and helium set using BBN consistency
-pars.set_cosmology(H0=70.0, ombh2=0.0226, omch2=0.112, mnu=0.06, omk=0, tau=0.06, num_bins = 3, ending_z = 2.5, zbins = [1.0,1.5,2.0], qbins = [1.0,-1.0,0.5])
+pars.set_cosmology(H0=70.0, ombh2=0.0226, omch2=0.112, mnu=0.06, omk=0, tau=0.06, num_bins = 3, ending_z = 2.0, zbins = [1.0,1.5,2.0], qbins = [0.,0.,0.])
 pars.InitPower.set_params(ns=0.965, r=0, As=2e-9)
 pars.set_for_lmax(2500, lens_potential_accuracy=0);
 #calculate results for these parameters
@@ -34,7 +34,7 @@ DL_dhost = results_dhost.luminosity_distance(z)
 #Set up a new set of parameters for CAMB
 pars = camb.CAMBparams()
 #This function sets up CosmoMC-like settings, with one massive neutrino and helium set using BBN consistency
-pars.set_cosmology(H0=70.0, ombh2=0.0226, omch2=0.112, mnu=0.06, omk=0, tau=0.06, num_bins = 2, ending_z = 2.0, zbins = [1.0,2.0], qbins = [0.0,0.0])
+pars.set_cosmology(H0=70.0, ombh2=0.0226, omch2=0.112, mnu=0.06, omk=0, tau=0.06, void_model = 0, num_bins = 2, ending_z = 2.0, zbins = [1.0,2.0], qbins = [0.0,0.0])
 pars.InitPower.set_params(ns=0.965, r=0, As=2e-9)
 pars.set_for_lmax(2500, lens_potential_accuracy=0);
 pars.minimizeme = False
@@ -50,8 +50,8 @@ DL = results_lcdm.luminosity_distance(z)
 
 
 #Plots and stuff
-plt.plot(z, DA, color='#8E001C', label=r'$\Lambda$CDM ($z_{\rm ini}=0$)')
-plt.plot(z, DA_dhost, color='#FFB300', label=r'DHOST ($z_{\rm ini}=10$)')
+plt.plot(z, DA, color='#8E001C', label=r'$\Lambda$CDM')
+plt.plot(z, DA_dhost, color='#FFB300', label=r'test void')
 plt.xlabel('$z$')
 plt.ylabel(r'$D_A /\rm{Mpc}$')
 plt.title('Angular diameter distance')
@@ -63,8 +63,8 @@ plt.show()
 
 
 #Plots and stuff
-plt.plot(z, H, color='#8E001C', label=r'$\Lambda$CDM ($z_{\rm ini}=0$)')
-plt.plot(z, H_dhost, color='#FFB300', label=r'DHOST ($z_{\rm ini}=10$)')
+plt.plot(z, H, color='#8E001C', label=r'$\Lambda$CDM')
+plt.plot(z, H_dhost, color='#FFB300', label=r'test void')
 plt.xlabel('$z$')
 plt.ylabel(r'$H(z)\ {\rm km}/{\rm s}/{\rm Mpc}$')
 plt.title('Hubble parameter')
@@ -74,8 +74,8 @@ plt.savefig('H_dhost.pdf')
 plt.show()
 
 #Plots and stuff
-plt.plot(z, DL, color='#8E001C', label=r'$\Lambda$CDM ($z_{\rm ini}=0$)')
-plt.plot(z, DL_dhost, color='#FFB300', label=r'DHOST ($z_{\rm ini}=10$)')
+plt.plot(z, DL, color='#8E001C', label=r'$\Lambda$CDM')
+plt.plot(z, DL_dhost, color='#FFB300', label=r'test void')
 plt.xlabel('$z$')
 plt.ylabel(r'$D_L /\rm{Mpc}$')
 plt.title('Luminosity distance')
