@@ -312,7 +312,8 @@ class CAMBparams(CAMB_Structure):
         return self
 
     def set_cosmology(self, H0=67.0, cosmomc_theta=None, ombh2=0.022, omch2=0.12, omk=0.0,
-                      void_model=2, num_bins = 1, smooth_factor = 10, zbins=[1.], qbins=[0.], correlation_length = 0.5, ending_z = 10, ODEsteps = 10000,
+                      void_model=2, num_bins = 1, smooth_factor = 10, #zbins=[1.], qbins=[0.], 
+                      correlation_length = 0.5, ending_z = 10, ODEsteps = 10000,
                       #void_model=2, num_bins = 1, smooth_factor = 10, correlation_length = 0.5, ending_z = 10, ODEsteps = 10000,
                       neutrino_hierarchy='degenerate', num_massive_neutrinos=1,
                       mnu=0.06, nnu=3.046, YHe=None, meffsterile=0.0, standard_neutrino_neff=3.046,
@@ -388,9 +389,13 @@ class CAMBparams(CAMB_Structure):
         self.void_model = void_model
         self.numvoidbins = num_bins
         self.smoothfactor = smooth_factor
+        data = {'a1': 1, 'a2': 2, 'a3': 3}
         for i in range(num_bins):
-            self.zbins[i] = zbins[i]
-            self.qbins[i] = qbins[i]
+            self.zbins[i] = 'zbins{}'.format(i)
+            self.qbins[i] = 'qbins{}'.format(i)
+        #for i in range(num_bins):
+        #    self.zbins[i] = zbins[i]
+        #    self.qbins[i] = qbins[i]
 
         self.corrlen = correlation_length
         self.endred = ending_z
