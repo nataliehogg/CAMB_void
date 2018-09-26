@@ -18,7 +18,8 @@ print('CAMB version: %s '%camb.__version__)
 #NEGATIVE Q
 pars = camb.CAMBparams()
 #This function sets up CosmoMC-like settings, with one massive neutrino and helium set using BBN consistency
-pars.set_cosmology(H0=70.0, ombh2=0.0226, omch2=0.112, mnu=0.06, omk=0, tau=0.06, num_bins = 3, ending_z = 2.0, zbins = [1.0,1.5,2.0], qbins = [0.5,0.5,0.])
+pars.set_cosmology(H0=70.0, ombh2=0.0226, omch2=0.112, mnu=0.06, omk=0, tau=0.06, num_bins = 3, ending_z = 2.0)
+pars.set_cosmology(zbins0 = 1.0, zbins1 = 1.5, zbins2 = 2.0, qbins0 = 0.5, qbins1 = 0.5, qbins2 = 0.0)
 pars.InitPower.set_params(ns=0.965, r=0, As=2e-9)
 pars.set_for_lmax(2500, lens_potential_accuracy=0);
 #calculate results for these parameters
@@ -33,7 +34,8 @@ DL_negative = results_dhost.luminosity_distance(z)
 #POSITIVE Q
 pars = camb.CAMBparams()
 #This function sets up CosmoMC-like settings, with one massive neutrino and helium set using BBN consistency
-pars.set_cosmology(H0=70.0, ombh2=0.0226, omch2=0.112, mnu=0.06, omk=0, tau=0.06, num_bins = 3, ending_z = 2.0, zbins = [1.0,1.5,2.0], qbins = [-3.,0.5,0.])
+pars.set_cosmology(H0=70.0, ombh2=0.0226, omch2=0.112, mnu=0.06, omk=0, tau=0.06, num_bins = 3, ending_z = 2.0)
+pars.set_cosmology(zbins0 = 1.0, zbins1 = 1.5, zbins2 = 2.0, qbins0 = -3., qbins1 = 0.5, qbins2 = 0.0)
 pars.InitPower.set_params(ns=0.965, r=0, As=2e-9)
 pars.set_for_lmax(2500, lens_potential_accuracy=0);
 #calculate results for these parameters
@@ -50,7 +52,7 @@ DL_positive = results_dhost.luminosity_distance(z)
 #Set up a new set of parameters for CAMB
 pars = camb.CAMBparams()
 #This function sets up CosmoMC-like settings, with one massive neutrino and helium set using BBN consistency
-pars.set_cosmology(H0=70.0, ombh2=0.0226, omch2=0.112, mnu=0.06, omk=0, tau=0.06, void_model = 0, num_bins = 2, ending_z = 2.0, zbins = [1.0,2.0], qbins = [0.0,0.0])
+pars.set_cosmology(H0=70.0, ombh2=0.0226, omch2=0.112, mnu=0.06, omk=0, tau=0.06, void_model = 0, num_bins = 2, ending_z = 2.0)
 pars.InitPower.set_params(ns=0.965, r=0, As=2e-9)
 pars.set_for_lmax(2500, lens_potential_accuracy=0);
 #calculate results for these parameters
@@ -74,7 +76,7 @@ plt.title('Angular diameter distance')
 plt.xlim([0,4])
 plt.ylim([0,2500]);
 plt.legend(loc='lower right', fontsize='small');
-plt.savefig('da_dhost.pdf')
+plt.savefig('da_vacuum.pdf')
 plt.show()
 
 
@@ -87,7 +89,7 @@ plt.ylabel(r'$H(z)\ {\rm km}/{\rm s}/{\rm Mpc}$')
 plt.title('Hubble parameter')
 #plt.xlim([0,2500]);
 plt.legend(loc='lower right', fontsize='small');
-plt.savefig('H_dhost.pdf')
+plt.savefig('H_vacuum.pdf')
 plt.show()
 
 #Plots and stuff
@@ -100,5 +102,5 @@ plt.title('Luminosity distance')
 plt.xlim([0,4])
 #plt.ylim([0,2500]);
 plt.legend(loc='lower right', fontsize='small');
-plt.savefig('lumdis_dhost.pdf')
+plt.savefig('lumdis_vacuum.pdf')
 plt.show()
