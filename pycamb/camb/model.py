@@ -312,7 +312,7 @@ class CAMBparams(CAMB_Structure):
         return self
 
     def set_cosmology(self, H0=67.0, cosmomc_theta=None, ombh2=0.022, omch2=0.12, omk=0.0,
-                      void_model=2, num_bins = 1, smooth_factor = 10, zbins0=0., qbins0=0., zbins1=1., qbins1=0., 
+                      void_model=2, num_bins = 1, smooth_factor = 10, zbins0=0., qbins0=0., zbins1=1., qbins1=0.,
                       zbins2=2., qbins2=0., zbins3=3., qbins3=0., zbins4=4., qbins4=0., zbins5=1., qbins5=0.,
                       zbins6=6., qbins6=0., zbins7=7., qbins7=0., zbins8=4., qbins8=0., zbins9=9., qbins9=0.,
                       zbins10=10., qbins10=0., zbins11=11., qbins11=0., zbins12=12., qbins12=0., zbins13=13., qbins13=0.,
@@ -391,11 +391,11 @@ class CAMBparams(CAMB_Structure):
         self.omegab = ombh2 / fac
         self.omegac = omch2 / fac
         self.void_model = void_model
-        self.numvoidbins = num_bins
+        self.numvoidbins = int(num_bins)
         self.smoothfactor = smooth_factor
-        
 
-        for i in range(num_bins):
+
+        for i in range(int(num_bins)):
             entryz = eval('zbins{}'.format(i))
             entryq = eval('qbins{}'.format(i))
             self.zbins[i] = entryz
