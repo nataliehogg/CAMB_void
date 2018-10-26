@@ -576,7 +576,6 @@ class CAMBparams(CAMB_Structure):
         else:
             self.Transfer.k_per_logint = k_per_logint
 
-        print 'checazzo', self.Transfer.k_per_logint
         zs = sorted(redshifts, reverse=True)
         if not silent and np.any(np.array(zs) - np.array(redshifts) != 0):
             print("Note: redshifts have been re-sorted (earliest first)")
