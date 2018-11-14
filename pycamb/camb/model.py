@@ -228,7 +228,9 @@ class CAMBparams(CAMB_Structure):
         ("qbins", c_double * 20),
         ("corrlen", c_double),
         ("endred", c_double),
+        ("rhov_t", c_double),
         ("void_model", c_int),
+        ("void_interaction", c_int),
         ("numvoidbins", c_int),
         ("numstepsODE", c_int),
         #-------MMmod
@@ -312,12 +314,12 @@ class CAMBparams(CAMB_Structure):
         return self
 
     def set_cosmology(self, H0=67.0, cosmomc_theta=None, ombh2=0.022, omch2=0.12, omk=0.0,
-                      void_model=2, num_bins = 1, smooth_factor = 10, zbins0=0., qbins0=0., zbins1=1., qbins1=0.,
+                      void_model=2, void_interaction =7,num_bins = 1, smooth_factor = 10, zbins0=0., qbins0=0., zbins1=1., qbins1=0.,
                       zbins2=2., qbins2=0., zbins3=3., qbins3=0., zbins4=4., qbins4=0., zbins5=1., qbins5=0.,
                       zbins6=6., qbins6=0., zbins7=7., qbins7=0., zbins8=4., qbins8=0., zbins9=9., qbins9=0.,
                       zbins10=10., qbins10=0., zbins11=11., qbins11=0., zbins12=12., qbins12=0., zbins13=13., qbins13=0.,
                       zbins14=14., qbins14=0., zbins15=15., qbins15=0., zbins16=16., qbins16=0., zbins17=17., qbins17=0.,
-                      correlation_length = 0.5, ending_z = 10, ODEsteps = 10000,
+                      correlation_length = 0.5, ending_z = 10, rhov_t=3, ODEsteps = 10000,
                       #void_model=2, num_bins = 1, smooth_factor = 10, correlation_length = 0.5, ending_z = 10, ODEsteps = 10000,
                       neutrino_hierarchy='degenerate', num_massive_neutrinos=1,
                       mnu=0.06, nnu=3.046, YHe=None, meffsterile=0.0, standard_neutrino_neff=3.046,
@@ -391,6 +393,8 @@ class CAMBparams(CAMB_Structure):
         self.omegab = ombh2 / fac
         self.omegac = omch2 / fac
         self.void_model = void_model
+        self.void_interaction = void_interaction
+        self.rhov_t = rhov_t
         self.numvoidbins = int(num_bins)
         self.smoothfactor = smooth_factor
 

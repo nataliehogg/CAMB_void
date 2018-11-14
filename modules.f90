@@ -115,8 +115,8 @@
         ! _tensor settings only used in initialization,
         !Max_l and Max_eta_k are set to the tensor variables if only tensors requested
 
-        real(dl)  :: omegab, omegac, omegav, omegan, smoothfactor, zbins(maxbins), qbins(maxbins), corrlen, endred
-        integer   :: void_model, numvoidbins, numstepsODE
+        real(dl)  :: omegab, omegac, omegav, omegan, smoothfactor, zbins(maxbins), qbins(maxbins), corrlen, endred, rhov_t
+        integer   :: void_model, void_interaction, numvoidbins, numstepsODE
         !Omega baryon, CDM, Lambda and massive neutrino
         real(dl)  :: H0,TCMB,yhe,Num_Nu_massless
         integer   :: Num_Nu_massive !sum of Nu_mass_numbers below
@@ -668,6 +668,32 @@
     end do
 
     end subroutine ComovingRadialDistanceArr
+    
+    function mod_rhocofz(z)
+    real(dl), intent(in) :: z
+    real(dl) :: mod_rhocofz
+    real(dl) :: rhocofz
+    external :: rhocofz
+    
+    mod_rhocofz=rhocofz(z)
+
+    !rhoofz(1) = rho_m
+    !rhoofz(2) = rho_v
+
+    end function mod_rhocofz
+
+function mod_rhovofz(z)
+    real(dl), intent(in) :: z
+    real(dl) :: mod_rhovofz
+    real(dl) :: rhovofz
+    external :: rhovofz
+
+    mod_rhovofz=rhovofz(z)
+
+    !rhoofz(1) = rho_m
+    !rhoofz(2) = rho_v
+
+    end function mod_rhovofz   
 
     function Hofz(z)
     !non-comoving Hubble in MPC units, divide by MPC_in_sec to get in SI units
@@ -1274,6 +1300,7 @@
     integer unit
     character(LEN=name_tag_len) :: cov_names((3+num_redshiftwindows)**2)
 
+    write(*,*) mod_rhocofz(0.1_dl)    
 
     if (present(factor)) then
         fact = factor

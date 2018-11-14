@@ -2,6 +2,7 @@
 !#This module computes the main equations for the interactive#
 !#void model.                                                #
 !#Current version updated on 08/06/2018                      #
+!# NH modified to include new interactions 13/11/18          #
 !#############################################################
 
 module initsolver
@@ -19,35 +20,74 @@ real(dl), dimension(:),allocatable :: z_ode, solmat, solvoid      !8piG/3 * rho_
 real(dl), dimension(:),allocatable :: ddsolmat, ddsolvoid         !same but derivatives obtained from spline
 real(dl), dimension(:),allocatable :: GP_z, GP_q, dd_GP_q         !output arrays of GP reconstruction
 real                               :: coupling                    !value of the coupling parameter as taken from CAMB
-integer                            :: model                       !choice of the interaction model we want to use
-integer, parameter                 :: theta_void=1, smooth_void=2 !possible options for q(z) binned reconstruction
+integer                            :: model                       !choice of the interaction model we want to use. is this ever used?
+integer, parameter                 :: theta_void=1, smooth_void=2!possible options for q(z) binned reconstruction
 integer, parameter                 :: GP_void=3, baseline_void=4  !possible options for q(z) gaussian process reconstruction
+
+integer, parameter                 :: vacuum_self_logistic = 1, logistic = 2, model_three = 3 ! choices of interaction
+integer, parameter                 :: cosha = 4, coshb = 5, coshc = 6 ! more interactions
+integer, parameter                 :: standard = 7 ! standard interaction
 
 logical                            :: debugging = .false.         !if T prints some files to check solver
 
 contains
 
-subroutine getcoupling(CP,z,rhov,Q)
+subroutine getcoupling(CP,z,rhov,rhocdm,Q)
 !this subroutine just returns Q at any redshift
 Type(CAMBparams) CP
 real(dl), intent(in)  :: z
-real, intent(in)      :: rhov
+real, intent(in)      :: rhov, rhocdm ! maybe not rhocdm? maybe rho_m or however it's called in CAMB
 real(dl), intent(out) :: Q
 real                  :: multitheta !double theta function for binning
+real                  :: rhov_s, Q_factor
 integer               :: i
+
+rhov_s = 3*CP%H0**2*CP%Omegav
+
+if (CP%void_interaction.eq.vacuum_self_logistic) then
+    Q_factor = rhov*(1 - (rhov/rhov_s))
+!    write(*,*)'Using vacuum_self_logistic'
+
+else if (CP%void_interaction.eq.logistic) then
+    Q_factor = ((rhocdm*rhov)/rhov_s)*(1-(rhov/rhov_s))
+!    write(*,*)'Using logistic'
+
+else if (CP%void_interaction.eq.model_three) then
+  Q_factor = sqrt(rhocdm*rhov)*(1-(rhov/rhov_s))
+!  write(*,*)'using model three'
+
+else if (CP%void_interaction.eq.cosha) then
+  Q_factor = sqrt(rhocdm*rhov)/cosh((rhov-CP%rhov_t)/rhov_s)
+!  write(*,*) 'using hyperbolic cosine type a'
+
+else if (CP%void_interaction.eq.coshb) then
+  Q_factor = rhocdm*rhov / (cosh((rhov-CP%rhov_t)/rhov_s)*rhov_s)
+!  write(*,*) 'using hyperbolic cosine type b'
+
+else if (CP%void_interaction.eq.coshc) then
+  Q_factor = sqrt(rhocdm*rhov)/cosh((rhov-CP%rhov_t)/rhov_s)**2.
+!  write(*,*) 'using hyperbolic cosine type c'
+
+else if (CP%void_interaction.eq.standard) then
+  Q_factor = rhov
+!  write(*,*) 'using standard interaction'
+
+else 
+!   write(*,*) 'did you forget to set the model?'
+end if
 
       if (CP%void_model.eq.theta_void) then
          !Working with binned qV. No smoothing.
 
          if (z.gt.CP%zbins(CP%numvoidbins)) then
-            Q = -CP%qbins(CP%numvoidbins)*rhov
+            Q = -CP%qbins(CP%numvoidbins)*Q_factor
          else
             Q = CP%qbins(1)
             do i=1,CP%numvoidbins-1
                multitheta = (sign(1d0,(z-CP%zbins(i)))+1)/2 - (sign(1d0,(z-CP%zbins(i+1)))+1)/2
                Q = Q + (CP%qbins(i+1)-CP%qbins(1))*multitheta
             end do
-            Q = -Q*rhov
+            Q = -Q*Q_factor
          end if
 
       else if (CP%void_model.eq.smooth_void) then
@@ -56,7 +96,7 @@ integer               :: i
 
 
          if (z.gt.CP%zbins(CP%numvoidbins)) then
-            Q = -CP%qbins(CP%numvoidbins)*rhov
+            Q = -CP%qbins(CP%numvoidbins)*Q_factor
          else
             Q = CP%qbins(1)
             do i=1,CP%numvoidbins-1
@@ -66,7 +106,7 @@ integer               :: i
                   Q = Q + (CP%qbins(i+1)-CP%qbins(i))/2 * (1+tanh( CP%smoothfactor*(z-CP%zbins(i))/((CP%zbins(i)-CP%zbins(i-1))/2)  ) )
                end if
             end do
-            Q = -Q*rhov
+            Q = -Q_factor*Q
          end if
 
       else if ((CP%void_model.eq.GP_void).or.(CP%void_model.eq.baseline_void)) then
@@ -76,9 +116,9 @@ integer               :: i
          else
             Q=0._dl
          end if
-         Q = -Q*rhov
+         Q = -Q*Q_factor
       else
-         write(*,*) 'wait for it'
+         write(*,*) 'wait for it', CP%void_model, CP%void_interaction
       end if
 
       !SP: debugging
@@ -358,7 +398,7 @@ subroutine deinterface(CP)
             debug_a = first_a_debug+k*(1.-first_a_debug)/nsteps
             call getrhos(debug_a,debug_c, debug_v)
             write(42,*) debug_a, debug_c/(debug_c+debug_v), debug_v/(debug_c+debug_v)
-            call getcoupling(CP,-1+1/debug_a,real(debug_v),debug_q)
+            call getcoupling(CP,-1+1/debug_a,real(debug_v), real(debug_c),debug_q)
             write(666,*) -1+1/debug_a, -debug_q/debug_v
          end do
          close(42)
@@ -406,7 +446,7 @@ subroutine xpsys(CP,n,k,h,x,f)
       !Gets redshift for this step and the coupling
       scalefac = log(1/(1+initial_z)) + k*h
       redshift = -1+1/exp(scalefac)
-      call getcoupling(CP,redshift,x(1),Q)
+      call getcoupling(CP,redshift,x(1),x(0),Q)
 
       !These are the actual derivatives
       !x'(1) = f(1)
@@ -480,5 +520,19 @@ end subroutine rk4sys
         ((a**3-a)*y2a(klo)+(b**3-b)*y2a(khi))*(h**2)/6.d0
     END SUBROUTINE extrasplint
     !--------------------------------------------------------------------
+
+!function rhoofz(z)
+!    real(dl), intent(in) :: z
+!    real(dl), dimension(2) :: rhoofz
+!    real(dl) :: a, rho_m, rho_v
+!    external :: getrhos
+
+ !   a = 1./(1.+z)
+
+  !  call getrhos(a, rho_m, rho_v)
+   ! rhoofz(1) = rho_m
+   ! rhoofz(2) = rho_v
+!end function rhoofz
+
 
 end module initsolver

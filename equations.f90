@@ -75,6 +75,32 @@
     end  subroutine init_background
 
 
+function rhocofz(z)
+    use initsolver
+    real(dl), intent(in) :: z
+    real(dl) :: rhocofz
+    real(dl) :: a, rho_m, rho_v
+!    external :: getrhos
+
+    a = 1./(1.+z)
+
+    call getrhos(a, rho_m, rho_v)
+    rhocofz = rho_m
+end function rhocofz
+
+function rhovofz(z)
+    use initsolver
+    real(dl), intent(in) :: z
+    real(dl) :: rhovofz
+    real(dl) :: a, rho_m, rho_v
+!    external :: getrhos
+
+    a = 1./(1.+z)
+
+    call getrhos(a, rho_m, rho_v)
+    rhovofz = rho_v
+end function rhovofz
+
     !Background evolution
     function dtauda(a)
     !get d tau / d a
@@ -1978,7 +2004,7 @@
 
     !MMmod: getting coupling from the solver
     if (CP%void_model.gt.0) then
-       call getcoupling(CP,-1+1/a,real(grhov_t/a2),voidQ)
+       call getcoupling(CP,-1+1/a,real(grhov_t/a2), real(grhoc_t/a2),voidQ)
        clxcdot=-k*z +voidQ*adotoa/(grhoc_t/a2)*clxc  !SPmod
     else
        clxcdot=-k*z

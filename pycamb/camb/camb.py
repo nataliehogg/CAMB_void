@@ -164,6 +164,14 @@ ComovingRadialDistanceArr.argtypes = [numpy_1d, numpy_1d, int_arg, d_arg]
 TimeOfzArr = camblib.__modelparams_MOD_timeofzarr
 TimeOfzArr.argtypes = [int_arg, numpy_1d, numpy_1d]
 
+mod_rhocofz = camblib.__modelparams_MOD_mod_rhocofz
+mod_rhocofz.argtypes = [d_arg]
+mod_rhocofz.restype = c_double
+
+mod_rhovofz = camblib.__modelparams_MOD_mod_rhovofz
+mod_rhovofz.argtypes = [d_arg]
+mod_rhovofz.restype = c_double
+
 Hofz = camblib.__modelparams_MOD_hofz
 Hofz.argtyes = [d_arg]
 Hofz.restype = c_double
@@ -1169,6 +1177,14 @@ class CAMBdata(object):
 
         if not np.isscalar(z): z = np.asarray(z)
         return self.angular_diameter_distance(z) * (1.0 + z) ** 2
+
+    def rhoc_of_z(self, z):
+         return mod_rhocofz(byref(c_double(z)))
+
+    def rhov_of_z(self, z):
+         return mod_rhovofz(byref(c_double(z)))
+        
+
 
     def h_of_z(self, z):
         r"""
