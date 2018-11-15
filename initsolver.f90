@@ -12,6 +12,9 @@ use ModelParams
 
 implicit none
 
+real, parameter :: cc = 2.99792458e8_dl
+
+
 !global variable for solver
 real                               :: initial_z                   !starting scale factor for ODE
 real                               :: final_z                     !final scale factor for ODE
@@ -39,10 +42,10 @@ real(dl), intent(in)  :: z
 real, intent(in)      :: rhov, rhocdm ! maybe not rhocdm? maybe rho_m or however it's called in CAMB
 real(dl), intent(out) :: Q
 real                  :: multitheta !double theta function for binning
-real                  :: rhov_s, Q_factor
+real(dl)              :: rhov_s, Q_factor, ratio
 integer               :: i
 
-rhov_s = 3*CP%H0**2*CP%Omegav
+rhov_s = 3*(1000*CP%H0/cc)**2*CP%Omegav !NH rhov_s in correct units
 
 if (CP%void_interaction.eq.vacuum_self_logistic) then
     Q_factor = rhov*(1 - (rhov/rhov_s))
@@ -75,6 +78,12 @@ else if (CP%void_interaction.eq.standard) then
 else 
 !   write(*,*) 'did you forget to set the model?'
 end if
+
+
+ratio = rhov/rhov_s
+!write(*,*) ratio
+
+
 
       if (CP%void_model.eq.theta_void) then
          !Working with binned qV. No smoothing.
@@ -166,7 +175,7 @@ end subroutine getrhos
 subroutine deinterface(CP)
       Type(CAMBparams) CP
       integer, parameter      :: n = 1
-      real, parameter :: cc = 2.99792458e8_dl
+      !real, parameter :: cc = 2.99792458e8_dl
       real, dimension(0:n)    :: x                              !dependent variables: rho_m, rho_v
       real                    :: h                              !step size
       real(dl)                :: rhoc_init, rhov_init
@@ -534,5 +543,16 @@ end subroutine rk4sys
    ! rhoofz(2) = rho_v
 !end function rhoofz
 
+
+!function ratio(z, rhov, rhov_s)
+!real(dl), intent(in) :: z
+!real(dl) :: a, rhov, rhov_s, ratio
+!external :: getrhos
+!z = 0
+!a = 1./(1.+z)
+!call getrhos(a, rhov, rhov_s)
+!ratio = rhov/rhov_s
+!write(*,*) ratio
+!end function ratio 
 
 end module initsolver
