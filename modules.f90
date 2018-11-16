@@ -115,7 +115,7 @@
         ! _tensor settings only used in initialization,
         !Max_l and Max_eta_k are set to the tensor variables if only tensors requested
 
-        real(dl)  :: omegab, omegac, omegav, omegan, smoothfactor, zbins(maxbins), qbins(maxbins), corrlen, endred, rhov_t
+        real(dl)  :: omegab, omegac, omegav, omegan, Omegav_s, smoothfactor, zbins(maxbins), qbins(maxbins), corrlen, endred, rhov_t !NH added omvs
         integer   :: void_model, void_interaction, numvoidbins, numstepsODE
         !Omega baryon, CDM, Lambda and massive neutrino
         real(dl)  :: H0,TCMB,yhe,Num_Nu_massless

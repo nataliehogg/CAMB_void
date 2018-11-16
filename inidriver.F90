@@ -126,6 +126,8 @@
     P%numstepsODE = Ini_Read_Int('ODEsteps',10000)
     P%rhov_t = Ini_Read_Double('rhov_t',10._dl)
 
+    P%Omegav_s = Ini_Read_Double('Omegav_s', 10._dl) !NH added Omegav_s
+
     P%numvoidbins = Ini_Read_Int('num_bins',1)
     do i=1,P%numvoidbins
        write(binnum,*) i

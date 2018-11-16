@@ -24,7 +24,7 @@ real(dl), dimension(:),allocatable :: ddsolmat, ddsolvoid         !same but deri
 real(dl), dimension(:),allocatable :: GP_z, GP_q, dd_GP_q         !output arrays of GP reconstruction
 real                               :: coupling                    !value of the coupling parameter as taken from CAMB
 integer                            :: model                       !choice of the interaction model we want to use. is this ever used?
-integer, parameter                 :: theta_void=1, smooth_void=2!possible options for q(z) binned reconstruction
+integer, parameter                 :: theta_void=1, smooth_void=2 !possible options for q(z) binned reconstruction
 integer, parameter                 :: GP_void=3, baseline_void=4  !possible options for q(z) gaussian process reconstruction
 
 integer, parameter                 :: vacuum_self_logistic = 1, logistic = 2, model_three = 3 ! choices of interaction
@@ -45,7 +45,7 @@ real                  :: multitheta !double theta function for binning
 real(dl)              :: rhov_s, Q_factor, ratio
 integer               :: i
 
-rhov_s = 3*(1000*CP%H0/cc)**2*CP%Omegav !NH rhov_s in correct units
+rhov_s = 3*(1000*CP%H0/cc)**2*CP%Omegav_s !NH rhov_s in correct units, changed to Omegav_s
 
 if (CP%void_interaction.eq.vacuum_self_logistic) then
     Q_factor = rhov*(1 - (rhov/rhov_s))
@@ -82,7 +82,6 @@ end if
 
 ratio = rhov/rhov_s
 !write(*,*) ratio
-
 
 
       if (CP%void_model.eq.theta_void) then

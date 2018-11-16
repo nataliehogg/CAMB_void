@@ -222,6 +222,8 @@ class CAMBparams(CAMB_Structure):
         ("omegac", c_double),
         ("omegav", c_double),
         ("omegan", c_double),
+        #NHmod
+        ("Omegav_s", c_double),
         #MMmod---------
         ("smoothfactor", c_double),
         ("zbins", c_double * 20 ),
@@ -313,7 +315,7 @@ class CAMBparams(CAMB_Structure):
         CAMB_setinitialpower(byref(self), byref(initial_power_params))
         return self
 
-    def set_cosmology(self, H0=67.0, cosmomc_theta=None, ombh2=0.022, omch2=0.12, omk=0.0,
+    def set_cosmology(self, H0=67.0, cosmomc_theta=None, ombh2=0.022, omch2=0.12, omk=0.0, Omegav_s = 1,
                       void_model=2, void_interaction =7,num_bins = 1, smooth_factor = 10, zbins0=0., qbins0=0., zbins1=1., qbins1=0.,
                       zbins2=2., qbins2=0., zbins3=3., qbins3=0., zbins4=4., qbins4=0., zbins5=1., qbins5=0.,
                       zbins6=6., qbins6=0., zbins7=7., qbins7=0., zbins8=4., qbins8=0., zbins9=9., qbins9=0.,
@@ -392,6 +394,7 @@ class CAMBparams(CAMB_Structure):
         fac = (self.H0 / 100.0) ** 2
         self.omegab = ombh2 / fac
         self.omegac = omch2 / fac
+        self.Omegav_s = Omegav_s #NH added omvs
         self.void_model = void_model
         self.void_interaction = void_interaction
         self.rhov_t = rhov_t

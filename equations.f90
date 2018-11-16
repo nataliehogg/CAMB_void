@@ -74,7 +74,6 @@
 
     end  subroutine init_background
 
-
 function rhocofz(z)
     use initsolver
     real(dl), intent(in) :: z
