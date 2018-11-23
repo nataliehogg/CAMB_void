@@ -30,6 +30,7 @@ integer, parameter                 :: GP_void=3, baseline_void=4  !possible opti
 integer, parameter                 :: vacuum_self_logistic = 1, logistic = 2, model_three = 3 ! choices of interaction
 integer, parameter                 :: cosha = 4, coshb = 5, coshc = 6 ! more interactions
 integer, parameter                 :: standard = 7 ! standard interaction
+integer, parameter                 :: VVE = 8
 
 logical                            :: debugging = .false.         !if T prints some files to check solver
 
@@ -71,12 +72,12 @@ else if (CP%void_interaction.eq.coshc) then
   Q_factor = sqrt(rhocdm*rhov)/cosh((rhov-CP%rhov_t)/rhov_s)**2.
 !  write(*,*) 'using hyperbolic cosine type c'
 
-else if (CP%void_interaction.eq.standard) then
+else if ((CP%void_interaction.eq.standard) .or. (CP%void_interaction.eq.VVE))then
   Q_factor = rhov
 !  write(*,*) 'using standard interaction'
 
 else 
-!   write(*,*) 'did you forget to set the model?'
+   write(*,*) "THIS MODEL DOESN'T EXIST!!"
 end if
 
 
@@ -143,8 +144,10 @@ real(dl), intent(in)      :: a
 real(dl), intent(out)     :: rho_m
 real(dl), intent(out)     :: rho_v
 real(dl)                  :: z
-real(dl), parameter       :: azero = 10**(-8.)
+real(dl), parameter       :: azero = 10**(-8.), deltaz = 0.5
 integer, optional :: error !Zero if OK
+
+
 
 if (a.gt.azero) then
    z = -1.+1./a
@@ -156,16 +159,28 @@ if ((z.ge.initial_z).and.(z.le.final_z)) then
    call extrasplint(z_ode,solmat,ddsolmat,nsteps,z,rho_m)
    call extrasplint(z_ode,solvoid,ddsolvoid,nsteps,z,rho_v)
 else
-   rho_m = solmat(nsteps) * ( (1+z)/(1+z_ode(nsteps)) )**3.
-   rho_v = solvoid(nsteps)
+   if (CP%void_interaction.eq.VVE) then
+
+      rho_m = solmat(nsteps) * ( (1+z)/(1+z_ode(nsteps)) )**3.
+      if ((z.gt.final_z).and.(z.le.final_z+deltaz)) then
+         rho_v = solvoid(nsteps)
+      else
+         rho_v = solvoid(nsteps) - solvoid(nsteps)/2 * (1+tanh(CP%smoothfactor*(z-CP%zbins(CP%numvoidbins)+deltaz)/((deltaz)/2)  ) )
+      end if
+   else
+      rho_m = solmat(nsteps) * ( (1+z)/(1+z_ode(nsteps)) )**3.
+      rho_v = solvoid(nsteps)
+   end if
+
 end if
 
-if ((rho_m.le.0._dl).or.(rho_v.le.0._dl)) then
+if ((rho_m.lt.0._dl).or.(rho_v.lt.0._dl)) then
    global_error_flag         = 1
    global_error_message      = 'INITSOLVER: negative densities'
    if (present(error)) error = global_error_flag
    return
 end if
+
 
 end subroutine getrhos
 
@@ -411,6 +426,7 @@ subroutine deinterface(CP)
          end do
          close(42)
          close(666)
+         stop
       end if
 
       if (debugging) then
