@@ -143,7 +143,7 @@ subroutine getrhos(a,rho_m,rho_v,error)
 real(dl), intent(in)      :: a
 real(dl), intent(out)     :: rho_m
 real(dl), intent(out)     :: rho_v
-real(dl)                  :: z
+real(dl)                  :: z, lastrho
 real(dl), parameter       :: azero = 10**(-8.), deltaz = 0.5
 integer, optional :: error !Zero if OK
 
@@ -161,11 +161,12 @@ if ((z.ge.initial_z).and.(z.le.final_z)) then
 else
    if (CP%void_interaction.eq.VVE) then
 
-      rho_m = solmat(nsteps) * ( (1+z)/(1+z_ode(nsteps)) )**3.
-      if ((z.gt.final_z).and.(z.le.final_z+deltaz)) then
-         rho_v = solvoid(nsteps)
+      if (z.gt.final_z) then !.and.(z.le.final_z+deltaz)) then
+         rho_v = (solvoid(nsteps) - solvoid(nsteps)/2 * (1+tanh(CP%smoothfactor*(z-CP%zbins(CP%numvoidbins)+deltaz)/((deltaz)/2)  ) ) )
+         rho_m = solmat(nsteps) + ((solmat(nsteps)* ( (1+z)/(1+z_ode(nsteps)) )**3.+solvoid(nsteps))-solmat(nsteps))/2 * (1+tanh(CP%smoothfactor*(z-CP%zbins(CP%numvoidbins)+deltaz)/((deltaz)/2)  ) ) 
       else
-         rho_v = solvoid(nsteps) - solvoid(nsteps)/2 * (1+tanh(CP%smoothfactor*(z-CP%zbins(CP%numvoidbins)+deltaz)/((deltaz)/2)  ) )
+         rho_m = (solmat(nsteps)* ( (1+(final_z+deltaz))/(1+z_ode(nsteps)) )**3.+solvoid(nsteps)) * ( (1+z)/(1+(final_z+deltaz)) )**3.
+         rho_v = 0.d0
       end if
    else
       rho_m = solmat(nsteps) * ( (1+z)/(1+z_ode(nsteps)) )**3.
