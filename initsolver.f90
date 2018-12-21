@@ -46,7 +46,7 @@ real                  :: multitheta !double theta function for binning
 real(dl)              :: rhov_s, Q_factor, ratio
 integer               :: i
 
-rhov_s = 3*(1000*CP%H0/cc)**2*CP%Omegav_s !NH rhov_s in correct units, changed to Omegav_s
+!rhov_s = 3*(1000*CP%H0/cc)**2*CP%Omegav_s !NH rhov_s in correct units, changed to Omegav_s
 
 if (CP%void_interaction.eq.vacuum_self_logistic) then
     Q_factor = rhov*(1 - (rhov/rhov_s))
@@ -81,7 +81,7 @@ else
 end if
 
 
-ratio = rhov/rhov_s
+!ratio = rhov/rhov_s
 !write(*,*) ratio
 
 
