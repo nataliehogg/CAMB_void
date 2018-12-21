@@ -9,7 +9,6 @@
     use GeneralSetup
     use DataLikelihoodList
     use RandUtils
-    use nestwrap, DUMMY1 => logZero !MMmod: polychord
     implicit none
 
     character(LEN=:), allocatable :: LogFileName,  numstr, fname, rootdir
@@ -115,10 +114,6 @@
         test_output_root = Ini%Read_String('test_output_root')
         test_used_params = Ini%Read_String('test_used_params') !If not specified, just take from central value
         test_check_compare = Ini%Read_Double('test_check_compare',logZero)
-    !MMmod: polychord
-    else if (Setup%action==action_PolyChord) then
-        !nest_resume = Ini%Read_Logical('checkpoint',.false.)
-        rootname = baseroot
     end if
 
     new_chains = .true.
@@ -204,9 +199,6 @@
         end if
     end if
 
-    !MMmod: polychord
-    !read the PolyChord parameters
-    if (Setup%action==action_PolyChord) call Initialise_PolyChord_Settings(Ini)
 
     call Ini%Close()
 
@@ -286,18 +278,6 @@
             if (status/=0) call MpiStop('Error reading test_used_params array')
         end if
         call Setup%DoTests(test_output_root,test_paramvals, test_check_compare)
-    !MMmod: polychord    
-    else if (Setup%action==action_PolyChord) then
-
-        call setup_polychord
-
-#ifdef MPI
-        if (Feedback > 0 .and. MPIRank==0) write (*,*) 'starting nested sampling'
-        call nest_sample(MPI_COMM_WORLD)
-#else
-        write (*,*) 'starting nested sampling'
-        call nest_sample(0)
-#endif
     else
         call DoAbort('undefined action')
     end if
