@@ -2,14 +2,18 @@
 !#This module computes the main equations for the interactive#
 !#void model.                                                #
 !#Current version updated on 08/06/2018                      #
+!# NH modified to include new interactions 13/11/18          #
 !#############################################################
 
 module initsolver
 use precision
-use constants
+! use constants
 use ModelParams
 
 implicit none
+
+real, parameter :: cc = 2.99792458e8_dl
+
 
 !global variable for solver
 real                               :: initial_z                   !starting scale factor for ODE
@@ -19,35 +23,80 @@ real(dl), dimension(:),allocatable :: z_ode, solmat, solvoid      !8piG/3 * rho_
 real(dl), dimension(:),allocatable :: ddsolmat, ddsolvoid         !same but derivatives obtained from spline
 real(dl), dimension(:),allocatable :: GP_z, GP_q, dd_GP_q         !output arrays of GP reconstruction
 real                               :: coupling                    !value of the coupling parameter as taken from CAMB
-integer                            :: model                       !choice of the interaction model we want to use
+integer                            :: model                       !choice of the interaction model we want to use. is this ever used?
 integer, parameter                 :: theta_void=1, smooth_void=2 !possible options for q(z) binned reconstruction
 integer, parameter                 :: GP_void=3, baseline_void=4  !possible options for q(z) gaussian process reconstruction
+
+integer, parameter                 :: vacuum_self_logistic = 1, logistic = 2, model_three = 3 ! choices of interaction
+integer, parameter                 :: cosha = 4, coshb = 5, coshc = 6 ! more interactions
+integer, parameter                 :: standard = 7 ! standard interaction
+integer, parameter                 :: VVE = 8
 
 logical                            :: debugging = .false.         !if T prints some files to check solver
 
 contains
 
-subroutine getcoupling(CP,z,rhov,Q)
+subroutine getcoupling(CP,z,rhov,rhocdm,Q)
 !this subroutine just returns Q at any redshift
 Type(CAMBparams) CP
 real(dl), intent(in)  :: z
-real, intent(in)      :: rhov
+real, intent(in)      :: rhov, rhocdm ! maybe not rhocdm? maybe rho_m or however it's called in CAMB
 real(dl), intent(out) :: Q
 real                  :: multitheta !double theta function for binning
+real(dl)              :: rhov_s, Q_factor, ratio
 integer               :: i
+
+if (CP%void_interaction<standard) rhov_s = 3*(1000*CP%H0/cc)**2*CP%Omegav_s !NH rhov_s in correct units, changed to Omegav_s
+
+if (CP%void_interaction.eq.vacuum_self_logistic) then
+    Q_factor = rhov*(1 - (rhov/rhov_s))
+!    write(*,*)'Using vacuum_self_logistic'
+
+else if (CP%void_interaction.eq.logistic) then
+    Q_factor = ((rhocdm*rhov)/rhov_s)*(1-(rhov/rhov_s))
+!    write(*,*)'Using logistic'
+
+else if (CP%void_interaction.eq.model_three) then
+  Q_factor = sqrt(rhocdm*rhov)*(1-(rhov/rhov_s))
+!  write(*,*)'using model three'
+
+else if (CP%void_interaction.eq.cosha) then
+  Q_factor = sqrt(rhocdm*rhov)/cosh((rhov-CP%rhov_t)/rhov_s)
+!  write(*,*) 'using hyperbolic cosine type a'
+
+else if (CP%void_interaction.eq.coshb) then
+  Q_factor = rhocdm*rhov / (cosh((rhov-CP%rhov_t)/rhov_s)*rhov_s)
+!  write(*,*) 'using hyperbolic cosine type b'
+
+else if (CP%void_interaction.eq.coshc) then
+  Q_factor = sqrt(rhocdm*rhov)/cosh((rhov-CP%rhov_t)/rhov_s)**2.
+!  write(*,*) 'using hyperbolic cosine type c'
+
+else if ((CP%void_interaction.eq.standard) .or. (CP%void_interaction.eq.VVE))then
+  Q_factor = rhov
+!  write(*,*) 'using standard interaction'
+
+else 
+   write(*,*) "THIS MODEL DOESN'T EXIST!!"
+end if
+
+
+if (CP%void_interaction<standard) ratio = rhov/rhov_s
+!write(*,*) ratio
+
 
       if (CP%void_model.eq.theta_void) then
          !Working with binned qV. No smoothing.
 
          if (z.gt.CP%zbins(CP%numvoidbins)) then
-            Q = -CP%qbins(CP%numvoidbins)*rhov
+            Q = -CP%qbins(CP%numvoidbins)*Q_factor
          else
             Q = CP%qbins(1)
             do i=1,CP%numvoidbins-1
                multitheta = (sign(1d0,(z-CP%zbins(i)))+1)/2 - (sign(1d0,(z-CP%zbins(i+1)))+1)/2
                Q = Q + (CP%qbins(i+1)-CP%qbins(1))*multitheta
             end do
-            Q = -Q*rhov
+            Q = -Q*Q_factor
          end if
 
       else if (CP%void_model.eq.smooth_void) then
@@ -56,7 +105,7 @@ integer               :: i
 
 
          if (z.gt.CP%zbins(CP%numvoidbins)) then
-            Q = -CP%qbins(CP%numvoidbins)*rhov
+            Q = -CP%qbins(CP%numvoidbins)*Q_factor
          else
             Q = CP%qbins(1)
             do i=1,CP%numvoidbins-1
@@ -66,7 +115,7 @@ integer               :: i
                   Q = Q + (CP%qbins(i+1)-CP%qbins(i))/2 * (1+tanh( CP%smoothfactor*(z-CP%zbins(i))/((CP%zbins(i)-CP%zbins(i-1))/2)  ) )
                end if
             end do
-            Q = -Q*rhov
+            Q = -Q_factor*Q
          end if
 
       else if ((CP%void_model.eq.GP_void).or.(CP%void_model.eq.baseline_void)) then
@@ -76,9 +125,9 @@ integer               :: i
          else
             Q=0._dl
          end if
-         Q = -Q*rhov
+         Q = -Q*Q_factor
       else
-         write(*,*) 'wait for it'
+         write(*,*) 'wait for it', CP%void_model, CP%void_interaction
       end if
 
       !SP: debugging
@@ -94,9 +143,11 @@ subroutine getrhos(a,rho_m,rho_v,error)
 real(dl), intent(in)      :: a
 real(dl), intent(out)     :: rho_m
 real(dl), intent(out)     :: rho_v
-real(dl)                  :: z
-real(dl), parameter       :: azero = 10**(-8.)
+real(dl)                  :: z, lastrho
+real(dl), parameter       :: azero = 10**(-8.), deltaz = 0.5
 integer, optional :: error !Zero if OK
+
+
 
 if (a.gt.azero) then
    z = -1.+1./a
@@ -108,16 +159,29 @@ if ((z.ge.initial_z).and.(z.le.final_z)) then
    call extrasplint(z_ode,solmat,ddsolmat,nsteps,z,rho_m)
    call extrasplint(z_ode,solvoid,ddsolvoid,nsteps,z,rho_v)
 else
-   rho_m = solmat(nsteps) * ( (1+z)/(1+z_ode(nsteps)) )**3.
-   rho_v = solvoid(nsteps)
+   if (CP%void_interaction.eq.VVE) then
+
+      if (z.gt.final_z) then !.and.(z.le.final_z+deltaz)) then
+         rho_v = (solvoid(nsteps) - solvoid(nsteps)/2 * (1+tanh(CP%smoothfactor*(z-CP%zbins(CP%numvoidbins)+deltaz)/((deltaz)/2)  ) ) )
+         rho_m = solmat(nsteps) + ((solmat(nsteps)* ( (1+z)/(1+z_ode(nsteps)) )**3.+solvoid(nsteps))-solmat(nsteps))/2 * (1+tanh(CP%smoothfactor*(z-CP%zbins(CP%numvoidbins)+deltaz)/((deltaz)/2)  ) ) 
+      else
+         rho_m = (solmat(nsteps)* ( (1+(final_z+deltaz))/(1+z_ode(nsteps)) )**3.+solvoid(nsteps)) * ( (1+z)/(1+(final_z+deltaz)) )**3.
+         rho_v = 0.d0
+      end if
+   else
+      rho_m = solmat(nsteps) * ( (1+z)/(1+z_ode(nsteps)) )**3.
+      rho_v = solvoid(nsteps)
+   end if
+
 end if
 
-if ((rho_m.le.0._dl).or.(rho_v.le.0._dl)) then
+if ((rho_m.lt.0._dl).or.(rho_v.lt.0._dl)) then
    global_error_flag         = 1
    global_error_message      = 'INITSOLVER: negative densities'
    if (present(error)) error = global_error_flag
    return
 end if
+
 
 end subroutine getrhos
 
@@ -126,6 +190,7 @@ end subroutine getrhos
 subroutine deinterface(CP)
       Type(CAMBparams) CP
       integer, parameter      :: n = 1
+      !real, parameter :: cc = 2.99792458e8_dl
       real, dimension(0:n)    :: x                              !dependent variables: rho_m, rho_v
       real                    :: h                              !step size
       real(dl)                :: rhoc_init, rhov_init
@@ -151,7 +216,7 @@ subroutine deinterface(CP)
 
       !initializing global ODE solver parameters from CAMB
       initial_z = 0._dl
-      final_z   = CP%endred
+      final_z   = CP%zbins(CP%numvoidbins)
       nsteps    = CP%numstepsODE
 
       !allocating arrays
@@ -172,8 +237,8 @@ subroutine deinterface(CP)
       end if
 
       !setting initial conditions for rho_c and rho_v at z=0
-      rhoc_init = 3*(1000*CP%H0/c)**2.*CP%omegac               !8 pi G * rho_c^0
-      rhov_init = 3*(1000*CP%H0/c)**2.*CP%omegav               !8 pi G * rho_V^0
+      rhoc_init = 3*(1000*CP%H0/cc)**2.*CP%omegac               !8 pi G * rho_c^0
+      rhov_init = 3*(1000*CP%H0/cc)**2.*CP%omegav               !8 pi G * rho_V^0
       x = (/rhoc_init, rhov_init/)                             !initial conditions
       h = (log(1/(1+final_z)) - log(1/(1+initial_z)))/nsteps
 
@@ -187,8 +252,8 @@ subroutine deinterface(CP)
             gpreds(i) = (CP%zbins(i)+CP%zbins(i-1))/2.
          end do
 
-         !Creating command line 
-  
+         !Creating command line
+
          !Generate tmp file name based on PID
          write (feature_file(11:16), "(Z6.6)") getpid()
          !1. Prepare command and launch it!
@@ -199,7 +264,7 @@ subroutine deinterface(CP)
          write(qbin, "(10f15.7)"     ) (CP%qbins(k),k=1,CP%numvoidbins) !python parser struggles with scientific notation negatives: using floats here
          write(lencorr, "(10E15.7)"  ) CP%corrlen
 
-      
+
          if (CP%void_model.eq.GP_void) then
             if (debugging) write(*,*) 'WORKING WITH GP'
             !here needs the call to script with no baseline
@@ -211,11 +276,11 @@ subroutine deinterface(CP)
 
             if (debugging) write(*,*) 'WORKING WITH GP (with baseline)'
 
-            command_plus_arguments = "python camb/GP.py --inired "//trim(adjustl(z_ini))//" --endred "//trim(adjustl(z_end))//" --ODEsteps "//trim(adjustl(steps_de))// & 
+            command_plus_arguments = "python camb/GP.py --inired "//trim(adjustl(z_ini))//" --endred "//trim(adjustl(z_end))//" --ODEsteps "//trim(adjustl(steps_de))// &
             & " --redshifts "//trim(adjustl(redbin))// " --couplings "//trim(adjustl(qbin))// " --l "//trim(adjustl(lencorr))//" --outfile " // feature_file
 
             !calling script!!!
-            if (debugging) then 
+            if (debugging) then
                write(*,*) 'Calling Gaussian process script with command line:'
                write(*,*) trim(adjustl(command_plus_arguments))
             end if
@@ -255,10 +320,10 @@ subroutine deinterface(CP)
             gpreds(i) = (CP%zbins(i)+CP%zbins(i-1))/2.
          end do
 
-         !Creating command line 
-  
+         !Creating command line
+
          !Generate tmp file name based on PID
-         write (feature_file(11:16), "(Z6.6)"), getpid()
+         write (feature_file(11:16), "(Z6.6)") getpid()
          !1. Prepare command and launch it!
          write(z_ini, "(E15.7)"      ) initial_z
          write(z_end, "(E15.7)"      ) final_z
@@ -267,7 +332,7 @@ subroutine deinterface(CP)
          write(qbin, "(10f15.7)"     ) (CP%qbins(k),k=1,CP%numvoidbins) !python parser struggles with scientific notation negatives: using floats here
          write(lencorr, "(10E15.7)"  ) CP%corrlen
 
-      
+
          if (CP%void_model.eq.GP_void) then
             if (debugging) write(*,*) 'WORKING WITH GP'
             !here needs the call to script with no baseline
@@ -279,11 +344,11 @@ subroutine deinterface(CP)
 
             if (debugging) write(*,*) 'WORKING WITH GP (with baseline)'
 
-            command_plus_arguments = "python camb/GP.py --inired "//trim(adjustl(z_ini))//" --endred "//trim(adjustl(z_end))//" --ODEsteps "//trim(adjustl(steps_de))// & 
+            command_plus_arguments = "python camb/GP.py --inired "//trim(adjustl(z_ini))//" --endred "//trim(adjustl(z_end))//" --ODEsteps "//trim(adjustl(steps_de))// &
             & " --redshifts "//trim(adjustl(redbin))// " --couplings "//trim(adjustl(qbin))// " --l "//trim(adjustl(lencorr))//" --outfile " // feature_file
 
             !calling script!!!
-            if (debugging) then 
+            if (debugging) then
                write(*,*) 'Calling Gaussian process script with command line:'
                write(*,*) trim(adjustl(command_plus_arguments))
             end if
@@ -357,11 +422,12 @@ subroutine deinterface(CP)
             debug_a = first_a_debug+k*(1.-first_a_debug)/nsteps
             call getrhos(debug_a,debug_c, debug_v)
             write(42,*) debug_a, debug_c/(debug_c+debug_v), debug_v/(debug_c+debug_v)
-            call getcoupling(CP,-1+1/debug_a,real(debug_v),debug_q)
+            call getcoupling(CP,-1+1/debug_a,real(debug_v), real(debug_c),debug_q)
             write(666,*) -1+1/debug_a, -debug_q/debug_v
          end do
          close(42)
          close(666)
+         stop
       end if
 
       if (debugging) then
@@ -405,7 +471,7 @@ subroutine xpsys(CP,n,k,h,x,f)
       !Gets redshift for this step and the coupling
       scalefac = log(1/(1+initial_z)) + k*h
       redshift = -1+1/exp(scalefac)
-      call getcoupling(CP,redshift,x(1),Q)
+      call getcoupling(CP,redshift,x(1),x(0),Q)
 
       !These are the actual derivatives
       !x'(1) = f(1)
@@ -479,5 +545,30 @@ end subroutine rk4sys
         ((a**3-a)*y2a(klo)+(b**3-b)*y2a(khi))*(h**2)/6.d0
     END SUBROUTINE extrasplint
     !--------------------------------------------------------------------
+
+!function rhoofz(z)
+!    real(dl), intent(in) :: z
+!    real(dl), dimension(2) :: rhoofz
+!    real(dl) :: a, rho_m, rho_v
+!    external :: getrhos
+
+ !   a = 1./(1.+z)
+
+  !  call getrhos(a, rho_m, rho_v)
+   ! rhoofz(1) = rho_m
+   ! rhoofz(2) = rho_v
+!end function rhoofz
+
+
+!function ratio(z, rhov, rhov_s)
+!real(dl), intent(in) :: z
+!real(dl) :: a, rhov, rhov_s, ratio
+!external :: getrhos
+!z = 0
+!a = 1./(1.+z)
+!call getrhos(a, rhov, rhov_s)
+!ratio = rhov/rhov_s
+!write(*,*) ratio
+!end function ratio 
 
 end module initsolver

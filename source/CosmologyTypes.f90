@@ -32,7 +32,7 @@
         logical :: Use_LSS = .false.
         logical :: Use_CMB = .false.
         logical :: use_nonlinear = .false.    !JD for WiggleZ MPK
-        integer :: void_n
+        integer :: void_n, interaction_type, void_model
         !l_max. Tensors are not computed unless compute_tensors = T in input file
         !Make these multiples of 50, should be 50 more than you need accurately
         integer :: lmax = 0
@@ -121,7 +121,7 @@
         real(mcp) void_qV(n_max)
         real(mcp) void_redshift(n_max)
         real(mcp) void_fiducial
-        real(mcp) ODEsteps,endred, void_model, smoothfactor, corrlen
+        real(mcp) ODEsteps,endred, smoothfactor, corrlen
 	integer void_mean_fiducial
         !-------------------------------
         real(mcp) zre, zre_delta, nufrac

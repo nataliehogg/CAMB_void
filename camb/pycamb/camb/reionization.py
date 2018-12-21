@@ -2,7 +2,7 @@ from .baseconfig import CAMB_Structure, dll_import
 from ctypes import c_bool, c_int, c_double
 
 # ---Variables in reionization.f90
-# To set the value please just put 
+# To set the value please just put
 # variablename.value = newvalue
 
 # logical
@@ -20,7 +20,7 @@ Rionization_zexp = dll_import(c_bool, "reionization", "rionization_zexp")
 
 class ReionizationParams(CAMB_Structure):
     """
-    Hold sparameters for the reionization model.
+    Holds parameters for the reionization model.
     """
     _fields_ = [
         ("Reionization", c_int),  # logical

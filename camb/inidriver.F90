@@ -28,7 +28,8 @@
     character(LEN=Ini_max_string_len) TransferFileNames(max_transfer_redshifts), &
         MatterPowerFileNames(max_transfer_redshifts), outroot, version_check
     real(dl) output_factor, nmassive
-    !MMmod: auxiliary variable for coupling bins
+
+   !MMmod: auxiliary variable for coupling bins
     character(LEN=Ini_max_string_len) binnum
 
 #ifdef WRITE_FITS
@@ -120,9 +121,12 @@
 
     !MMmod: reading parameters for interacting void
     P%void_model = Ini_Read_Int('void_model',1)
+    P%void_interaction = Ini_Read_Int('void_interaction',7)
     P%endred     = Ini_Read_Double('ending_z',10._dl)
     P%numstepsODE = Ini_Read_Int('ODEsteps',10000)
+    P%rhov_t = Ini_Read_Double('rhov_t',10._dl)
 
+    P%Omegav_s = Ini_Read_Double('Omegav_s', 10._dl) !NH added Omegav_s
 
     P%numvoidbins = Ini_Read_Int('num_bins',1)
     do i=1,P%numvoidbins
@@ -146,7 +150,6 @@
        write(*,*) 'ONLY BINNED COUPLING AND GP IMPLEMENTED AT THE MOMENT'
        write(*,*) 'PLEASE WAIT FOR MORE FANCY STUFF!'
     end if
-
 
     P%tcmb   = Ini_Read_Double('temp_cmb',COBE_CMBTemp)
     P%yhe    = Ini_Read_Double('helium_fraction',0.24_dl)
@@ -182,12 +185,17 @@
     !JD 08/13 begin changes for nonlinear lensing of CMB + LSS compatibility
     !P%Transfer%redshifts -> P%Transfer%PK_redshifts and P%Transfer%num_redshifts -> P%Transfer%PK_num_redshifts
     !in the P%WantTransfer loop.
-    if (((P%NonLinear==NonLinear_lens .or. P%NonLinear==NonLinear_both) .and. P%DoLensing) &
-        .or. P%PK_WantTransfer) then
-    P%Transfer%high_precision=  Ini_Read_Logical('transfer_high_precision',.false.)
+    if (((P%NonLinear==NonLinear_lens .or. P%NonLinear==NonLinear_both) .and. P%DoLensing) .or. P%PK_WantTransfer) then
+        P%Transfer%high_precision=  Ini_Read_Logical('transfer_high_precision',.false.)
     else
         P%transfer%high_precision = .false.
     endif
+    if (P%PK_WantTransfer) then
+        P%Transfer%accurate_massive_neutrinos = Ini_Read_Logical('accurate_massive_neutrino_transfers',.false.)
+    else
+        P%Transfer%accurate_massive_neutrinos = .false.
+    end if
+
     if (P%NonLinear/=NonLinear_none) call NonLinear_ReadParams(DefIni)
 
     if (P%PK_WantTransfer)  then
@@ -298,6 +306,10 @@
     P%AccuratePolarization = Ini_Read_Logical('accurate_polarization',.true.)
     P%AccurateReionization = Ini_Read_Logical('accurate_reionization',.false.)
     P%AccurateBB = Ini_Read_Logical('accurate_BB',.false.)
+    if (P%AccurateBB .and. P%WantCls .and. (P%Max_l < 3500 .or. &
+        (P%NonLinear/=NonLinear_lens .and. P%NonLinear/=NonLinear_both) .or. P%Max_eta_k < 18000)) &
+        write(*,*) 'WARNING: for accurate lensing BB you need high l_max_scalar, k_eta_max_scalar and non-linear lensing'
+
     P%DerivedParameters = Ini_Read_Logical('derived_parameters',.true.)
 
     version_check = Ini_Read_String('version_check')

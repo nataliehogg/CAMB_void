@@ -93,25 +93,21 @@
     P%omegac = CMB%omc
     P%omegav = CMB%omv
 
-    P%numvoidbins = CosmoSettings%void_n
+    P%numvoidbins      = CosmoSettings%void_n
+    P%void_model       = CosmoSettings%void_model
+    P%void_interaction = CosmoSettings%interaction_type
     do i=1, CosmoSettings%void_n
        P%zbins(i) = CMB%void_redshift(i)
        P%qbins(i) = CMB%void_qV(i)
     end do
 
-  P%void_model = CMB%void_model
-  P%endred = CMB%endred
-  P%numstepsODE = CMB%ODEsteps
   if (P%void_model.eq.2) P%smoothfactor= CMB%smoothfactor
-  if (P%void_model.gt.2) P%corrlen = CMB%corrlen
 
     P%H0 = CMB%H0
     P%Reion%redshift= CMB%zre
     P%Reion%delta_redshift = CMB%zre_delta
     w_lam = CMB%w
     !wa_ppf = CMB%wa  !SPmod
-    P%baryfeed =CMB%baryfeed !SJ
-    P%barybloat = CMB%barybloat !SJ
     ALens = CMB%ALens
     ALens_Fiducial = CMB%ALensf
     P%InitialConditionVector(initial_iso_CDM) = &

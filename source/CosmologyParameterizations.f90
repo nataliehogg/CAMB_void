@@ -74,9 +74,13 @@
     this%num_derived = Names%num_derived
     !set number of hard parameters, number of initial power spectrum parameters
 
-    call Ini%Read('number_of_bins',CosmoSettings%void_n)
 
-    call this%SetTheoryParameterNumbers(23+2*CosmoSettings%void_n+2,last_power_index) !NH increased no. of params to 23 +1 for fiducial and prior likelihood
+    !VOID------------------------------------
+    call Ini%Read('number_of_bins',CosmoSettings%void_n)
+    call Ini%Read('interaction_type',CosmoSettings%interaction_type)
+    call Ini%Read('void_model',CosmoSettings%void_model)
+
+    call this%SetTheoryParameterNumbers(17+2*CosmoSettings%void_n,last_power_index) !NH increased no. of params to 23 +1 for fiducial and prior likelihood
 
     !----------------------------------------
     end subroutine TP_Init
@@ -320,23 +324,14 @@
         CMB%ALensf = Params(15)
         CMB%fdm = Params(16)
 
-        CMB%baryfeed = Params(17) !SJ
-        CMB%barybloat = Params(18) !SJ
-        CMB%endred = Params(19)
-        CMB%ODEsteps = Params(20)
-        CMB%void_model =Params(21)
-        CMB%smoothfactor = Params(22)
+        CMB%smoothfactor = Params(17)
         
-        CMB%corrlen = Params(23) !NH added correlation length
 
         do j =1,CosmoSettings%void_n
-          CMB%void_qV(j) = Params(23+j)
-          CMB%void_redshift(j) =Params(23+CosmoSettings%void_n+j)
+          CMB%void_qV(j) = Params(17+j)
+          CMB%void_redshift(j) =Params(17+CosmoSettings%void_n+j)
         end do
 
-        CMB%void_fiducial = Params(23+2*CosmoSettings%void_n+1)
-
-	CMB%void_mean_fiducial = Params(23+2*CosmoSettings%void_n+2) !SPmod
 
         call SetFast(Params,CMB)
     end if
