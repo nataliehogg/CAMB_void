@@ -217,7 +217,7 @@ subroutine deinterface(CP)
       !initializing global ODE solver parameters from CAMB
       initial_z = 0._dl
       final_z   = CP%zbins(CP%numvoidbins)
-      nsteps    = CP%numstepsODE
+      nsteps    = 10000
 
       !allocating arrays
       if (allocated(z_ode) .eqv. .false.) allocate(z_ode(nsteps+1), solmat(nsteps+1), solvoid(nsteps+1))
