@@ -18,6 +18,7 @@ export MKL_NUM_THREADS=5
 python plotters/plotter_triangle_Cfix.py
 python plotters/plotter_triangle_Cvar.py  
 python plotters/plotter_triangle_VVE.py
+python plotters/plotter_triangle_VVE_standard.py
 
 
 python python/GetDist.py chains/pk15_Cfix
