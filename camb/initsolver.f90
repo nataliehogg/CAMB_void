@@ -40,49 +40,47 @@ subroutine getcoupling(CP,z,rhov,rhocdm,Q)
 !this subroutine just returns Q at any redshift
 Type(CAMBparams) CP
 real(dl), intent(in)  :: z
-real, intent(in)      :: rhov, rhocdm ! maybe not rhocdm? maybe rho_m or however it's called in CAMB
+real, intent(in)      :: rhov, rhocdm
 real(dl), intent(out) :: Q
 real                  :: multitheta !double theta function for binning
-real(dl)              :: rhov_s, Q_factor, ratio
+real(dl)              :: rhov_s, Q_factor, ratio, rhocrit
 integer               :: i
 
-if (CP%void_interaction<standard) rhov_s = 3*(1000*CP%H0/cc)**2*CP%Omegav_s !NH rhov_s in correct units, changed to Omegav_s
+!if (CP%void_interaction<standard) rhov_s = 3*(1000*CP%H0/cc)**2*CP%Omegav_s !NH rhov_s in correct units, changed to Omegav_s
+
+if (CP%void_interaction.lt.standard) rhocrit = 3*(CP%H0)**2 !NH introduced rho critical today in interaction, and results checked with CAMB
 
 if (CP%void_interaction.eq.vacuum_self_logistic) then
-    Q_factor = rhov*(1 - (rhov/rhov_s))
+    Q_factor = rhov*(1 - (rhov/rhocrit))
 !    write(*,*)'Using vacuum_self_logistic'
 
 else if (CP%void_interaction.eq.logistic) then
-    Q_factor = ((rhocdm*rhov)/rhov_s)*(1-(rhov/rhov_s))
+    Q_factor = ((rhocdm*rhov)/rhocrit)*(1-(rhov/rhocrit))
 !    write(*,*)'Using logistic'
 
 else if (CP%void_interaction.eq.model_three) then
-  Q_factor = sqrt(rhocdm*rhov)*(1-(rhov/rhov_s))
+  Q_factor = sqrt(rhocdm*rhov)*(1-(rhov/rhocrit))
 !  write(*,*)'using model three'
 
 else if (CP%void_interaction.eq.cosha) then
-  Q_factor = sqrt(rhocdm*rhov)/cosh((rhov-CP%rhov_t)/rhov_s)
+  Q_factor = sqrt(rhocdm*rhov)/cosh((rhov-CP%rhov_t)/rhocrit)
 !  write(*,*) 'using hyperbolic cosine type a'
 
 else if (CP%void_interaction.eq.coshb) then
-  Q_factor = rhocdm*rhov / (cosh((rhov-CP%rhov_t)/rhov_s)*rhov_s)
+  Q_factor = rhocdm*rhov / (cosh((rhov-CP%rhov_t)/rhocrit)*rhocrit)
 !  write(*,*) 'using hyperbolic cosine type b'
 
 else if (CP%void_interaction.eq.coshc) then
-  Q_factor = sqrt(rhocdm*rhov)/cosh((rhov-CP%rhov_t)/rhov_s)**2.
+  Q_factor = sqrt(rhocdm*rhov)/cosh((rhov-CP%rhov_t)/rhocrit)**2.
 !  write(*,*) 'using hyperbolic cosine type c'
 
 else if ((CP%void_interaction.eq.standard) .or. (CP%void_interaction.eq.VVE))then
   Q_factor = rhov
 !  write(*,*) 'using standard interaction'
 
-else 
+else
    write(*,*) "THIS MODEL DOESN'T EXIST!!"
 end if
-
-
-if (CP%void_interaction<standard) ratio = rhov/rhov_s
-!write(*,*) ratio
 
 
       if (CP%void_model.eq.theta_void) then
@@ -163,7 +161,7 @@ else
 
       if (z.gt.final_z) then !.and.(z.le.final_z+deltaz)) then
          rho_v = (solvoid(nsteps) - solvoid(nsteps)/2 * (1+tanh(CP%smoothfactor*(z-CP%zbins(CP%numvoidbins)+deltaz)/((deltaz)/2)  ) ) )
-         rho_m = solmat(nsteps) + ((solmat(nsteps)* ( (1+z)/(1+z_ode(nsteps)) )**3.+solvoid(nsteps))-solmat(nsteps))/2 * (1+tanh(CP%smoothfactor*(z-CP%zbins(CP%numvoidbins)+deltaz)/((deltaz)/2)  ) ) 
+         rho_m = solmat(nsteps) + ((solmat(nsteps)* ( (1+z)/(1+z_ode(nsteps)) )**3.+solvoid(nsteps))-solmat(nsteps))/2 * (1+tanh(CP%smoothfactor*(z-CP%zbins(CP%numvoidbins)+deltaz)/((deltaz)/2)  ) )
       else
          rho_m = (solmat(nsteps)* ( (1+(final_z+deltaz))/(1+z_ode(nsteps)) )**3.+solvoid(nsteps)) * ( (1+z)/(1+(final_z+deltaz)) )**3.
          rho_v = 0.d0
@@ -569,6 +567,6 @@ end subroutine rk4sys
 !call getrhos(a, rhov, rhov_s)
 !ratio = rhov/rhov_s
 !write(*,*) ratio
-!end function ratio 
+!end function ratio
 
 end module initsolver
