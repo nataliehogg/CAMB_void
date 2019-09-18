@@ -8,7 +8,7 @@
 #SBATCH -p sciama4.q
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=natalie.hogg@port.ac.uk
-#SBATCH -D /users/hoggn/building_17bin_plik18
+#SBATCH -D /users/hoggn/17bin_planck2018
 
 # Configure modules and load modules
 module load /opt/apps/etc/modules/core/services/s3cmd
