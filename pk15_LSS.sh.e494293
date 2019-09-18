@@ -1,0 +1,2 @@
+slurmstepd: error: *** JOB 494293 ON node304 CANCELLED AT 2019-09-18T10:31:46 DUE TO TIME LIMIT ***
+mpirun: Forwarding signal 18 to job
