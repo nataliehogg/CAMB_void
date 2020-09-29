@@ -564,7 +564,7 @@ class CAMBparams(CAMB_Structure):
 
         self.WantTransfer = True
         self.Transfer.high_precision = True
-        print self.Transfer.high_precision
+        print(self.Transfer.high_precision)
         self.Transfer.accurate_massive_neutrinos = accurate_massive_neutrino_transfers
         self.Transfer.kmax = kmax
         if nonlinear is not None:
